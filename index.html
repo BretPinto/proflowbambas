@@ -110,7 +110,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .mx-td.td-doing{background:#FFFBF0}
 .mx-td.td-done{background:#F3FDF5}
 .proj-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:3px;letter-spacing:-.2px}
-.proj-dates{font-size:10px;color:var(--text3);margin-bottom:5px;font-family:'DM Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.proj-dates{font-size:9.5px;color:var(--text3);margin-bottom:5px;font-family:'DM Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
 .proj-prog{height:3px;background:var(--bg2);border-radius:2px;margin-bottom:5px;overflow:hidden}
 .proj-prog-fill{height:100%;border-radius:2px}
 .proj-stat{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
@@ -2215,16 +2215,15 @@ function openEditProj(pid) {
     d.classList.toggle('sel', dc === ec);
   });
 
-  // Dates — from stored metadata or parse from display
-  const meta = PROJ_META[pid] || {};
-  document.getElementById('edit-proj-start').value = meta.start || '';
-  document.getElementById('edit-proj-end').value = meta.end || '';
+  // Dates — read from PROJ model (populated from GAS)
+  const projData = PROJ[pid] || {};
+  document.getElementById('edit-proj-start').value = projData.start || '';
+  document.getElementById('edit-proj-end').value   = projData.end   || '';
 
-  // Members — infer from cards with this project + stored meta
+  // Members
+  const members = String(projData.members || '').split(',').filter(Boolean);
   const cardResps = new Set();
   row.querySelectorAll('.card[data-resp]').forEach(c => cardResps.add(c.dataset.resp));
-  // Also check subtask selects in DOM for this proj (approximate via stored meta)
-  const members = meta.members || Array.from(cardResps);
   document.getElementById('epm-br').checked = members.includes('BR') || cardResps.has('BR');
   document.getElementById('epm-an').checked = members.includes('AN') || cardResps.has('AN');
   document.getElementById('epm-ap').checked = members.includes('AP') || cardResps.has('AP');
