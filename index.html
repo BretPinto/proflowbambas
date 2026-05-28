@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- ProFlow v10.1 — 2026-05-27 — GAS v7 -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -352,6 +353,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
       <span id="sb-user-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
       <button onclick="doLogout()" title="Cerrar sesión" style="background:none;border:none;cursor:pointer;color:var(--text3);padding:2px;border-radius:4px" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'"><i class="ti ti-logout" style="font-size:14px"></i></button>
     </div>
+    <div style="padding:4px 14px 8px;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace" id="sb-version">v10.1</div>
   </div>
 </nav>
 <div class="sb-expand-fab" id="sb-fab" onclick="toggleSb()"><i class="ti ti-layout-sidebar-left-expand"></i></div>
@@ -812,11 +814,12 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 
 <script>
 'use strict';
+const APP_VERSION = 'v10.1 — 2026-05-27';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GAS — Backend Google Apps Script (hardcoded, same pattern as Resomasa)
 // ═══════════════════════════════════════════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyL-cYVYuJryUX-_VJlA2HNJe2gEvTXP4dms0xhT-YURXedqqTjJiAnx3m3yk96bOXd/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwt9l-GdtFY59MZGBGUxrZbZRsp0rg78yD18p5wksDY-F8Nd2ifghe0bawCRvwlNI-a/exec';
 
 // ADMIN email — only this user sees Ajustes
 const ADMIN_INITIALS = 'BR';
