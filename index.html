@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.4 — 2026-05-28 — GAS v8 -->
+<!-- ProFlow v10.5 — 2026-05-28 — GAS v8 -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -129,6 +129,9 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .av-a{background:#E0DCFF;color:#4C2DB3}
 .av-b{background:#C5F0DC;color:#0B5C37}
 .av-c{background:#FFD9CC;color:#7D2B10}
+.av-d{background:#FFF0C2;color:#7A5A00}
+.av-e{background:#D0EEFF;color:#0B3C6E}
+.av-f{background:#F5D0FF;color:#5A1278}
 .dtag{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:2px;margin-left:auto;font-family:'DM Mono',monospace}
 .dtag i{font-size:11px}
 .dtag.overdue{color:var(--red)}
@@ -784,15 +787,15 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 
 <script>
 'use strict';
-const APP_VERSION = 'v10.4 — 2026-05-28';
+const APP_VERSION = 'v10.5 — 2026-05-28';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GAS — Backend Google Apps Script (hardcoded, same pattern as Resomasa)
 // ═══════════════════════════════════════════════════════════════════════════════
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwt9l-GdtFY59MZGBGUxrZbZRsp0rg78yD18p5wksDY-F8Nd2ifghe0bawCRvwlNI-a/exec';
 
-// ADMIN email — only this user sees Ajustes
-const ADMIN_INITIALS = 'BR';
+// Admin check — based on role from Sheet, not hardcoded initials
+function isAdmin(user) { return user && (user.role === 'admin'); }
 
 // ── Session ─────────────────────────────────────────────────────────────────
 var currentUser = null;
@@ -828,13 +831,17 @@ function doLogin() {
       sessionSave(data);
       applySession(data);
     } else {
-      errEl.textContent = (data && data.error) || 'Correo o contraseña incorrectos';
+      // Show specific error from GAS or generic message
+      const msg = (data && data.error) ? data.error :
+                  (!data)              ? 'Sin respuesta del servidor' :
+                  'Correo o contraseña incorrectos';
+      errEl.textContent = msg;
       errEl.style.display = 'block';
       document.getElementById('login-pass').value = '';
     }
-  }, function() {
+  }, function(err) {
     spinner.style.display = 'none';
-    errEl.textContent = 'Error de conexión. Intenta de nuevo.';
+    errEl.textContent = 'Error de conexión: ' + (err || 'Verifica tu conexión a internet');
     errEl.style.display = 'block';
   });
 }
@@ -843,11 +850,11 @@ function applySession(user) {
   currentUser = user;
   // Show/hide Ajustes
   const ajustesBtn = document.getElementById('sb-ajustes');
-  if (ajustesBtn) ajustesBtn.style.display = user.initials === ADMIN_INITIALS ? 'flex' : 'none';
+  if (ajustesBtn) ajustesBtn.style.display = isAdmin(user) ? 'flex' : 'none';
   // Show user info in sidebar
   const avEl   = document.getElementById('sb-user-av');
   const nameEl = document.getElementById('sb-user-name');
-  if (avEl)   { avEl.textContent = user.initials; avEl.className = 'av ' + (user.initials==='BR'?'av-a':user.initials==='AN'?'av-b':'av-c'); }
+  if (avEl)   { avEl.textContent = user.initials; avEl.className = 'av ' + getAvClass(user.initials); }
   if (nameEl) nameEl.textContent = user.name || user.initials;
   // Show app, hide login
   document.getElementById('login-screen').style.display = 'none';
@@ -990,6 +997,12 @@ function loadFromGAS() {
             endISO:   endISO,
             members:  String(p.members || '')
           };
+          // Keep PROJ_META in sync (used by edit project modal)
+          PROJ_META[p.id] = {
+            start:   startISO,
+            end:     endISO,
+            members: String(p.members || '').split(',').filter(Boolean)
+          };
           if (!PROJ_TASKS[p.id]) PROJ_TASKS[p.id] = [];
         });
       }
@@ -1028,6 +1041,13 @@ function loadFromGAS() {
     toast('⚠ Sin conexión — modo local');
   };
   document.head.appendChild(script);
+}
+
+// Dynamic avatar class — index based on position in USERS[], no hardcoded initials
+const AV_CLASSES = ['av-a','av-b','av-c','av-d','av-e','av-f'];
+function getAvClass(initials) {
+  const idx = USERS.findIndex(function(u) { return u.initials === initials; });
+  return AV_CLASSES[idx >= 0 ? idx % AV_CLASSES.length : 0];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1240,8 +1260,7 @@ function renderMatrix() {
     if (pmEl) {
       const members = String(p.members||'').split(',').filter(Boolean);
       pmEl.innerHTML = members.map(m => {
-        const cls = m==='BR'?'av-a':m==='AN'?'av-b':'av-c';
-        return '<div class="av ' + cls + '">' + m + '</div>';
+        return '<div class="av ' + getAvClass(m) + '">' + m + '</div>';
       }).join('');
     }
 
@@ -1372,8 +1391,10 @@ function renderReports() {
   }).join('');
 
   // ── Carga por responsable ─────────────────────────────────────
-  const members = [{id:'BR',name:'Bret',cls:'av-a'},{id:'AN',name:'Antonhy',cls:'av-b'},{id:'AP',name:'Antonhy P.',cls:'av-c'}];
-  const colMap  = {'av-a':'var(--p1)','av-b':'var(--p2)','av-c':'var(--p4)'};
+  const members = USERS.map(function(u, i) {
+    return { id: u.initials, name: u.name.split(' ')[0], cls: AV_CLASSES[i % AV_CLASSES.length] };
+  });
+  const colMap  = {'av-a':'var(--p1)','av-b':'var(--p2)','av-c':'var(--p3)','av-d':'var(--p4)','av-e':'var(--blue)','av-f':'var(--red)'};
   document.getElementById('rpt-resp-bars').innerHTML = members.map(m => {
     const mt = TASKS.filter(t => t.resp === m.id);
     const md = mt.filter(t => t.status === 'done').length;
@@ -1478,7 +1499,7 @@ function kpiCard(val, label, color) {
 
 function taskRow(task, isDone, isOverdue) {
   const proj = PROJ[task.proj] || {};
-  const avCls = task.resp === 'BR' ? 'av-a' : task.resp === 'AN' ? 'av-b' : 'av-c';
+  const avCls = getAvClass(task.resp);
   return '<div class="rpt-task-row">' +
     '<span class="dot" style="background:' + (proj.col||'#888') + ';width:7px;height:7px;flex-shrink:0"></span>' +
     '<span style="flex:1;' + (isDone?'text-decoration:line-through;color:var(--text2)':'') + '">' + task.title + '</span>' +
@@ -1510,9 +1531,7 @@ function makeCard(task) {
   card.onclick = () => openDrawer(card);
   const dateIcon  = task.status === 'done' ? 'ti-check' : 'ti-calendar';
   const dateClass = isOverdue && task.status !== 'done' ? 'dtag overdue' : 'dtag';
-  const avatarClass = task.resp === 'BR' ? 'av-a' : task.resp === 'AN' ? 'av-b' : 'av-c';
-
-  // Progress bar only for Doing activities with subtasks
+  const avatarClass = getAvClass(task.resp);
   const subs = task.subtasks || [];
   const subDone = subs.filter(s => s.done).length;
   const subPct  = subs.length ? Math.round(subDone / subs.length * 100) : -1;
@@ -1544,11 +1563,9 @@ function makeKcard(task) {
   kcard.dataset.taskId  = task.id;
   kcard.dataset.priority = task.priority;
   kcard.onclick = () => openDrawer(kcard);
-  const avatarClass = task.resp === 'BR' ? 'av-a' : task.resp === 'AN' ? 'av-b' : 'av-c';
+  const avatarClass = getAvClass(task.resp);
   const isOverdue   = task.date && task.date.includes('May') && parseInt(task.date) < 27;
   const dateClass   = isOverdue && task.status !== 'done' ? 'dtag overdue' : 'dtag';
-
-  // Progress bar only for Doing activities with subtasks
   const subs    = task.subtasks || [];
   const subDone = subs.filter(s => s.done).length;
   const subPct  = subs.length ? Math.round(subDone / subs.length * 100) : -1;
@@ -1587,35 +1604,11 @@ function dateToTLPct(monthIdx, day, daysInMonth) {
   return TL_MONTHS[monthIdx].s + ((day - 1) / daysInMonth) * 8.333;
 }
 
-// Project bar ranges {l:left%, w:width%} — recalculated for 12-month scale
-// p1: 1 May → 30 Jun  = 33.33% → 49.17%  w=15.84
-// p2: 15 May → 31 Jul = 36.67% → 58.33%  w=21.67
-// p3: 1 Mar → 30 Jun  = 16.67% → 49.17%  w=32.50
-// p4: 1 Abr → 15 Jun  = 25.00% → 45.00%  w=20.00
-const PR = {
-  p1:{l:33.33, w:15.84},
-  p2:{l:36.67, w:21.66},
-  p3:{l:16.67, w:32.50},
-  p4:{l:25.00, w:20.00}
-};
+// PR = project bar positions {pid: {l:leftPct, w:widthPct}} — filled dynamically by renderTimeline()
+const PR = {};
 
-// Activity bar ranges — recalculated for 12-month scale
-// Original 6-month scale factor: old% * (6/12) = old% * 0.5
-const AR = {
-  'ab-p1-1':{l:33.33,w:2.0, p:'p1'},   // 1 May, done
-  'ab-p1-2':{l:35.00,w:4.5, p:'p1'},   // Flow GET/POST en curso
-  'ab-p1-3':{l:36.00,w:3.0, p:'p1'},   // 28 May
-  'ab-p1-4':{l:41.67,w:8.0, p:'p1'},   // 1–10 Jun
-  'ab-p2-1':{l:34.33,w:4.0, p:'p2'},   // 30 May
-  'ab-p2-2':{l:43.67,w:4.0, p:'p2'},   // 5 Jun
-  'ab-p2-3':{l:46.67,w:5.0, p:'p2'},   // 12 Jun
-  'ab-p3-1':{l:19.33,w:6.0, p:'p3'},   // 10 May (done)
-  'ab-p3-2':{l:27.67,w:6.0, p:'p3'},   // 15 May (done)
-  'ab-p3-3':{l:36.00,w:4.0, p:'p3'},   // 28 May
-  'ab-p3-4':{l:41.67,w:5.0, p:'p3'},   // 2 Jun
-  'ab-p4-1':{l:27.67,w:5.0, p:'p4'},   // 5 May (done)
-  'ab-p4-2':{l:37.67,w:4.0, p:'p4'},   // 27 May
-};
+// AR = activity bar positions {actId: {l, w, p}} — filled dynamically by renderTimeline()
+const AR = {};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // STATE
@@ -1821,7 +1814,8 @@ function saveInline(inp) {
   if (!val) { wrap.classList.remove('open'); return; }
   const proj = inp.dataset.proj, status = inp.dataset.status;
   const newId = 't' + Date.now();
-  const newTask = {id:newId, proj, title:val, status, resp:'BR', date:'', priority:'medium', dep:'', subtasks:[]};
+  const defaultResp = currentUser ? currentUser.initials : (USERS.length ? USERS[0].initials : '');
+  const newTask = {id:newId, proj, title:val, status, resp:defaultResp, date:'', priority:'medium', dep:'', subtasks:[]};
   TASKS.push(newTask);
   rebuildProjTasks();
   renderMatrix();
@@ -1829,7 +1823,7 @@ function saveInline(inp) {
   renderTimeline();
   // Persist to GAS
   gasCall({ action:'saveTask', task: JSON.stringify({
-    id:newId, proj, title:val, status, resp:'BR', date:'', priority:'medium', dep:'', subtasks:'[]'
+    id:newId, proj, title:val, status, resp:defaultResp, date:'', priority:'medium', dep:'', subtasks:'[]'
   })}, null, null);
   inp.value = ''; wrap.classList.remove('open');
   toast('✓ Actividad añadida');
@@ -1904,7 +1898,7 @@ function openDrawer(card) {
   const title  = task ? task.title  : (card.querySelector('.card-title,.kcard-title') || {textContent:'—'}).textContent;
   const proj   = task ? task.proj   : (card.dataset.proj   || 'p1');
   const status = task ? task.status : (card.dataset.status || 'todo');
-  const resp   = task ? task.resp   : (card.dataset.resp   || 'BR');
+  const resp   = task ? task.resp   : (card.dataset.resp   || (currentUser ? currentUser.initials : ''));
   const prio   = task ? task.priority : (card.dataset.priority || 'medium');
   const dep    = task ? task.dep    : (card.dataset.dep    || '');
 
@@ -2209,13 +2203,8 @@ function saveStInline() {
 let editingProjId = null;
 let editSelColor = '#378ADD';
 
-// Stored project metadata {pid: {start, end, members:[]}}
-const PROJ_META = {
-  p1:{start:'2026-05-01',end:'2026-06-30',members:['BR','AN']},
-  p2:{start:'2026-05-15',end:'2026-07-31',members:['AN','BR']},
-  p3:{start:'2026-03-01',end:'2026-06-30',members:['BR']},
-  p4:{start:'2026-04-01',end:'2026-06-15',members:['BR','AP']},
-};
+// PROJ_META is populated dynamically from PROJ (loaded from Sheet) — no hardcoded values
+const PROJ_META = {};
 
 function openEditProj(pid) {
   editingProjId = pid;
@@ -2341,6 +2330,13 @@ function createProject() {
   const classes = ['kp1','kp2','kp3','kp4'];
   const idx = Object.keys(PROJ).length % 4;
 
+  // Read selected members from checkboxes (populated from USERS[])
+  const selectedMembers = USERS.filter(function(u) {
+    const cb = document.getElementById('pm-' + u.initials.toLowerCase());
+    return cb && cb.checked;
+  }).map(function(u) { return u.initials; });
+  const membersStr = selectedMembers.length ? selectedMembers.join(',') : (currentUser ? currentUser.initials : '');
+
   // Add to PROJ model
   PROJ[pid] = {
     name:    name,
@@ -2348,15 +2344,15 @@ function createProject() {
     cls:     classes[idx],
     start:   start,
     end:     end,
-    members: 'BR'
+    members: membersStr
   };
   PROJ_TASKS[pid] = [];
-  PROJ_META[pid]  = { start, end, members: ['BR'] };
+  PROJ_META[pid]  = { start, end, members: selectedMembers };
 
   // Persist to GAS
   gasCall({ action: 'saveProject', project: JSON.stringify({
     id: pid, name, color: selProjColor || colors[idx],
-    start, end, members: 'BR'
+    start, end, members: membersStr
   })}, null, null);
 
   // Re-render all views
@@ -2938,8 +2934,8 @@ function renderUsers() {
     if (cachedUsers.length === 0) {
       list.innerHTML = '<div class="rpt-empty">Sin usuarios registrados</div>'; return;
     }
-    list.innerHTML = cachedUsers.map(function(u) {
-      const avCls = u.initials==='BR'?'av-a':u.initials==='AN'?'av-b':'av-c';
+    list.innerHTML = cachedUsers.map(function(u, i) {
+      const avCls = AV_CLASSES[i % AV_CLASSES.length];
       return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">' +
         '<div class="av ' + avCls + '">' + (u.initials||'?') + '</div>' +
         '<div style="flex:1">' +
