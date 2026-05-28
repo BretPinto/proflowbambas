@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 -->
+<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 15:33-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -955,10 +955,10 @@ function loadFromGAS() {
   // Hide overlay and render — called on success OR timeout
   function finishLoad() {
     rebuildProjTasks();
-    renderMatrix();
-    renderKanban();
-    renderTimeline();
-    populateUserSelects();
+    try { renderMatrix(); } catch(e) { console.error('renderMatrix:', e); }
+    try { renderKanban(); } catch(e) { console.error('renderKanban:', e); }
+    try { renderTimeline(); } catch(e) { console.error('renderTimeline:', e); }
+    try { populateUserSelects(); } catch(e) { console.error('populateUserSelects:', e); }
     if (overlay) overlay.style.display = 'none';
   }
 
@@ -1658,6 +1658,7 @@ let activeStatusFilter = null;
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════════
 function pctToLabel(p) {
+  if (p === null || p === undefined || isNaN(p)) return '—';
   p = Math.max(0, Math.min(100, p));
   let m = TL_MONTHS[TL_MONTHS.length - 1];
   for (let i = TL_MONTHS.length - 1; i >= 0; i--) {
