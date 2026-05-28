@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.2 — 2026-05-27 — GAS v8 -->
+<!-- ProFlow v10.3 — 2026-05-28 — GAS v8 -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -390,9 +390,6 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
     </select>
     <select class="fsel" id="fsel-resp" onchange="applyFilters()">
       <option value="all">👤 Todos los responsables</option>
-      <option value="BR">BR — Bret</option>
-      <option value="AN">AN — Antonhy</option>
-      <option value="AP">AP — Antonhy P.</option>
     </select>
     <div class="fchip" id="fc-todo" data-val="todo" onclick="toggleStatusChip(this)"><i class="ti ti-circle"></i>To Do</div>
     <div class="fchip" id="fc-doing" data-val="doing" onclick="toggleStatusChip(this)"><i class="ti ti-loader"></i>Doing</div>
@@ -423,17 +420,12 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
       <div class="kn-cols">
         <!-- TODO -->
         <div class="kcol kcol-todo">
-          <div class="kcol-hd"><i class="ti ti-circle"></i>To Do<span class="kcol-cnt">5</span></div>
+          <div class="kcol-hd"><i class="ti ti-circle"></i>To Do<span class="kcol-cnt" id="kn-cnt-todo">0</span></div>
           <div class="kcol-body" id="kn-todo">
-            <div class="kcard kp1" data-proj="p1" data-status="todo" data-resp="AP" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p1);width:6px;height:6px"></span>Portal Externo</div><div class="kcard-title">Lista UsuariosPortal SP</div><div class="kcard-foot"><div class="av av-c">AP</div><div class="dtag overdue" style="margin-left:auto"><i class="ti ti-calendar"></i>28 May</div></div></div>
-            <div class="kcard kp1" data-proj="p1" data-status="todo" data-resp="BR" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p1);width:6px;height:6px"></span>Portal Externo</div><div class="kcard-title">Diseño mobile-first HTML/JS</div><div class="kcard-foot"><div class="av av-a">BR</div><div class="dtag" style="margin-left:auto"><i class="ti ti-calendar"></i>1 Jun</div></div></div>
-            <div class="kcard kp2" data-proj="p2" data-status="todo" data-resp="AN" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p2);width:6px;height:6px"></span>Traslados v2</div><div class="kcard-title">Rol externo transportista</div><div class="kcard-foot"><div class="av av-b">AN</div><div class="dtag" style="margin-left:auto"><i class="ti ti-calendar"></i>5 Jun</div></div></div>
-            <div class="kcard kp2" data-proj="p2" data-status="todo" data-resp="BR" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p2);width:6px;height:6px"></span>Traslados v2</div><div class="kcard-title">Filtrado por vendor address</div><div class="kcard-foot"><div class="av av-a">BR</div><div class="dtag" style="margin-left:auto"><i class="ti ti-calendar"></i>12 Jun</div></div></div>
-            <div class="kcard kp3" data-proj="p3" data-status="todo" data-resp="BR" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p3);width:6px;height:6px"></span>BanBIF Migrate</div><div class="kcard-title">Migrar vsp_visitvisitors</div><div class="kcard-foot"><div class="av av-a">BR</div><div class="dtag" style="margin-left:auto"><i class="ti ti-calendar"></i>2 Jun</div></div></div>
             <div class="add-row" onclick="openKAdd('kadd-todo')" style="margin-top:4px"><i class="ti ti-plus"></i>Agregar tarea</div>
             <div class="kadd-form" id="kadd-todo">
-              <select class="kadd-sel" id="kadd-todo-proj"><option value="p1">Portal Externo</option><option value="p2">Traslados v2</option><option value="p3">BanBIF Migrate</option><option value="p4">Visitas Planta</option></select>
-              <select class="kadd-sel" id="kadd-todo-resp"><option value="BR">BR — Bret</option><option value="AN">AN — Antonhy</option><option value="AP">AP — Antonhy P.</option></select>
+              <select class="kadd-sel" id="kadd-todo-proj"></select>
+              <select class="kadd-sel" id="kadd-todo-resp"></select>
               <input class="inline-input" id="kadd-todo-inp" placeholder="Nombre de la tarea..." onkeydown="kaddKey(event,'kadd-todo')" onblur="kaddBlur('kadd-todo')">
               <div class="inline-hint" style="margin-top:4px">Enter o clic fuera = guardar · Esc = cancelar</div>
             </div>
@@ -441,17 +433,12 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
         </div>
         <!-- DOING -->
         <div class="kcol kcol-doing">
-          <div class="kcol-hd"><i class="ti ti-loader"></i>Doing<span class="kcol-cnt">5</span></div>
+          <div class="kcol-hd"><i class="ti ti-loader"></i>Doing<span class="kcol-cnt" id="kn-cnt-doing">0</span></div>
           <div class="kcol-body" id="kn-doing">
-            <div class="kcard kp1" data-proj="p1" data-status="doing" data-resp="AN" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p1);width:6px;height:6px"></span>Portal Externo</div><div class="kcard-title">Flow GET — Leer registros SP</div><div class="kcard-foot"><div class="av av-b">AN</div><div class="dtag" style="margin-left:auto"><i class="ti ti-calendar"></i>25 May</div></div></div>
-            <div class="kcard kp1" data-proj="p1" data-status="doing" data-resp="AN" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p1);width:6px;height:6px"></span>Portal Externo</div><div class="kcard-title">Flow POST — Acción registro</div><div class="kcard-foot"><div class="av av-b">AN</div><div class="dtag" style="margin-left:auto"><i class="ti ti-calendar"></i>26 May</div></div></div>
-            <div class="kcard kp2" data-proj="p2" data-status="doing" data-resp="AN" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p2);width:6px;height:6px"></span>Traslados v2</div><div class="kcard-title">Combobox libre en galería</div><div class="kcard-foot"><div class="av av-b">AN</div><div class="dtag" style="margin-left:auto"><i class="ti ti-calendar"></i>30 May</div></div></div>
-            <div class="kcard kp3" data-proj="p3" data-status="doing" data-resp="BR" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p3);width:6px;height:6px"></span>BanBIF Migrate</div><div class="kcard-title">SP usp_maestro_ejecutor</div><div class="kcard-foot"><div class="av av-a">BR</div><div class="dtag" style="margin-left:auto"><i class="ti ti-calendar"></i>28 May</div></div></div>
-            <div class="kcard kp4" data-proj="p4" data-status="doing" data-resp="BR" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p4);width:6px;height:6px"></span>Visitas Planta</div><div class="kcard-title">Fix logo en email HTML</div><div class="kcard-foot"><div class="av av-a">BR</div><div class="dtag" style="margin-left:auto"><i class="ti ti-calendar"></i>27 May</div></div></div>
             <div class="add-row" onclick="openKAdd('kadd-doing')" style="margin-top:4px;display:none"><i class="ti ti-plus"></i>Agregar tarea</div>
             <div class="kadd-form" id="kadd-doing">
-              <select class="kadd-sel" id="kadd-doing-proj"><option value="p1">Portal Externo</option><option value="p2">Traslados v2</option><option value="p3">BanBIF Migrate</option><option value="p4">Visitas Planta</option></select>
-              <select class="kadd-sel" id="kadd-doing-resp"><option value="BR">BR — Bret</option><option value="AN">AN — Antonhy</option><option value="AP">AP — Antonhy P.</option></select>
+              <select class="kadd-sel" id="kadd-doing-proj"></select>
+              <select class="kadd-sel" id="kadd-doing-resp"></select>
               <input class="inline-input" id="kadd-doing-inp" placeholder="Nombre de la tarea..." onkeydown="kaddKey(event,'kadd-doing')" onblur="kaddBlur('kadd-doing')">
               <div class="inline-hint" style="margin-top:4px">Enter o clic fuera = guardar · Esc = cancelar</div>
             </div>
@@ -459,16 +446,12 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
         </div>
         <!-- DONE -->
         <div class="kcol kcol-done">
-          <div class="kcol-hd"><i class="ti ti-circle-check"></i>Done<span class="kcol-cnt">5</span></div>
+          <div class="kcol-hd"><i class="ti ti-circle-check"></i>Done<span class="kcol-cnt" id="kn-cnt-done">0</span></div>
           <div class="kcol-body" id="kn-done">
-            <div class="kcard kp1" data-proj="p1" data-status="done" data-resp="BR" style="opacity:.65" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p1);width:6px;height:6px"></span>Portal Externo</div><div class="kcard-title">Propuesta gerencia PPT</div><div class="kcard-foot"><div class="av av-a">BR</div><div class="dtag" style="margin-left:auto"><i class="ti ti-check"></i>22 May</div></div></div>
-            <div class="kcard kp3" data-proj="p3" data-status="done" data-resp="BR" style="opacity:.65" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p3);width:6px;height:6px"></span>BanBIF Migrate</div><div class="kcard-title">Migrar vsp_institution</div><div class="kcard-foot"><div class="av av-a">BR</div><div class="dtag" style="margin-left:auto"><i class="ti ti-check"></i>10 May</div></div></div>
-            <div class="kcard kp3" data-proj="p3" data-status="done" data-resp="BR" style="opacity:.65" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p3);width:6px;height:6px"></span>BanBIF Migrate</div><div class="kcard-title">Config t_log DEV/QA/PROD</div><div class="kcard-foot"><div class="av av-a">BR</div><div class="dtag" style="margin-left:auto"><i class="ti ti-check"></i>15 May</div></div></div>
-            <div class="kcard kp4" data-proj="p4" data-status="done" data-resp="AP" style="opacity:.65" onclick="openDrawer(this)"><div class="kcard-proj"><span class="dot" style="background:var(--p4);width:6px;height:6px"></span>Visitas Planta</div><div class="kcard-title">Portal Power Pages QA</div><div class="kcard-foot"><div class="av av-c">AP</div><div class="dtag" style="margin-left:auto"><i class="ti ti-check"></i>5 May</div></div></div>
             <div class="add-row" onclick="openKAdd('kadd-done')" style="margin-top:4px;display:none"><i class="ti ti-plus"></i>Agregar tarea</div>
             <div class="kadd-form" id="kadd-done">
-              <select class="kadd-sel" id="kadd-done-proj"><option value="p1">Portal Externo</option><option value="p2">Traslados v2</option><option value="p3">BanBIF Migrate</option><option value="p4">Visitas Planta</option></select>
-              <select class="kadd-sel" id="kadd-done-resp"><option value="BR">BR — Bret</option><option value="AN">AN — Antonhy</option><option value="AP">AP — Antonhy P.</option></select>
+              <select class="kadd-sel" id="kadd-done-proj"></select>
+              <select class="kadd-sel" id="kadd-done-resp"></select>
               <input class="inline-input" id="kadd-done-inp" placeholder="Nombre de la tarea..." onkeydown="kaddKey(event,'kadd-done')" onblur="kaddBlur('kadd-done')">
               <div class="inline-hint" style="margin-top:4px">Enter o clic fuera = guardar · Esc = cancelar</div>
             </div>
@@ -528,9 +511,6 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
       <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <select id="rpt-resp" onchange="renderReports()" class="fsel">
           <option value="all">Todos los responsables</option>
-          <option value="BR">BR — Bret</option>
-          <option value="AN">AN — Antonhy</option>
-          <option value="AP">AP — Antonhy P.</option>
         </select>
         <div style="display:flex;align-items:center;gap:6px;background:var(--white);border:1px solid var(--border2);border-radius:20px;padding:4px 12px">
           <i class="ti ti-calendar" style="font-size:13px;color:var(--text2)"></i>
@@ -658,9 +638,6 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
       <div class="dr-row"><i class="ti ti-folder"></i><span>Proyecto</span><span class="dr-val" id="dr-proj" style="font-weight:600">—</span></div>
       <div class="dr-row"><i class="ti ti-user"></i><span>Responsable</span>
         <select class="dr-sel" id="dr-resp" onchange="updateCardResp()">
-          <option value="BR">BR — Bret Pinto</option>
-          <option value="AN">AN — Antonhy</option>
-          <option value="AP">AP — Antonhy P.</option>
         </select>
       </div>
       <div class="dr-row"><i class="ti ti-calendar-event"></i><span>Inicio</span>
@@ -740,10 +717,8 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
     </div>
     <div class="modal-field">
       <div class="modal-label">Miembros</div>
-      <div class="member-row">
-        <label class="member-label"><input type="checkbox" checked id="pm-br"><div class="av av-a" style="width:18px;height:18px;font-size:8px">BR</div>Bret</label>
-        <label class="member-label"><input type="checkbox" id="pm-an"><div class="av av-b" style="width:18px;height:18px;font-size:8px">AN</div>Antonhy</label>
-        <label class="member-label"><input type="checkbox" id="pm-ap"><div class="av av-c" style="width:18px;height:18px;font-size:8px">AP</div>Antonhy P.</label>
+      <div class="member-row" id="pm-members-cont">
+        <!-- populated by populateUserSelects() -->
       </div>
     </div>
     <div class="modal-footer">
@@ -793,10 +768,8 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
     </div>
     <div class="modal-field">
       <div class="modal-label">Miembros</div>
-      <div class="member-row">
-        <label class="member-label"><input type="checkbox" id="epm-br"><div class="av av-a" style="width:18px;height:18px;font-size:8px">BR</div>Bret</label>
-        <label class="member-label"><input type="checkbox" id="epm-an"><div class="av av-b" style="width:18px;height:18px;font-size:8px">AN</div>Antonhy</label>
-        <label class="member-label"><input type="checkbox" id="epm-ap"><div class="av av-c" style="width:18px;height:18px;font-size:8px">AP</div>Antonhy P.</label>
+      <div class="member-row" id="epm-members-cont">
+        <!-- populated by populateUserSelects() -->
       </div>
     </div>
     <div style="padding:12px;background:var(--red-bg);border-radius:9px;display:flex;align-items:center;justify-content:space-between">
@@ -814,7 +787,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 
 <script>
 'use strict';
-const APP_VERSION = 'v10.1 — 2026-05-27';
+const APP_VERSION = 'v10.3 — 2026-05-28';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GAS — Backend Google Apps Script (hardcoded, same pattern as Resomasa)
@@ -979,6 +952,7 @@ function loadFromGAS() {
     renderMatrix();
     renderKanban();
     renderTimeline();
+    populateUserSelects();
     if (overlay) overlay.style.display = 'none';
   }
 
@@ -996,6 +970,11 @@ function loadFromGAS() {
     if (document.head.contains(script)) document.head.removeChild(script);
 
     if (data && data.ok !== false) {
+      // ── Store users ───────────────────────────────────────
+      if (data.users && data.users.length) {
+        USERS.length = 0;
+        data.users.forEach(function(u) { USERS.push(u); });
+      }
       // ── Rebuild PROJ ──────────────────────────────────────
       if (data.projects && data.projects.length) {
         Object.keys(PROJ).forEach(function(k) { delete PROJ[k]; });
@@ -1074,7 +1053,51 @@ function rebuildProjTasks() {
 
 function getTask(id) { return TASKS.find(t => t.id === id); }
 
-// Rebuild sidebar project list from PROJ
+// Populate all user dropdowns and member checkboxes from USERS[]
+var USERS = []; // populated from GAS
+
+function populateUserSelects() {
+  if (!USERS.length) return;
+  const avCls = ['av-a','av-b','av-c','av-d'];
+
+  // Build options HTML
+  const opts = USERS.map(function(u) {
+    return '<option value="' + u.initials + '">' + u.initials + ' — ' + u.name + '</option>';
+  }).join('');
+
+  // All resp selects
+  ['fsel-resp','dr-resp','kadd-todo-resp','kadd-doing-resp','kadd-done-resp','rpt-resp'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const hasAll = id === 'fsel-resp' || id === 'rpt-resp';
+    el.innerHTML = (hasAll ? '<option value="all">' + (id==='rpt-resp'?'Todos los responsables':'👤 Todos los responsables') + '</option>' : '') + opts;
+  });
+
+  // Kanban proj selects — from PROJ
+  ['kadd-todo-proj','kadd-doing-proj','kadd-done-proj'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = Object.entries(PROJ).map(function(e) {
+      return '<option value="' + e[0] + '">' + e[1].name + '</option>';
+    }).join('');
+  });
+
+  // Member checkboxes in new project modal
+  const pmCont = document.getElementById('pm-members-cont');
+  if (pmCont) {
+    pmCont.innerHTML = USERS.map(function(u, i) {
+      return '<label class="member-label"><input type="checkbox" id="pm-' + u.initials.toLowerCase() + '" ' + (i===0?'checked':'') + '><div class="av ' + (avCls[i]||'av-a') + '" style="width:18px;height:18px;font-size:8px">' + u.initials + '</div>' + u.name.split(' ')[0] + '</label>';
+    }).join('');
+  }
+
+  // Member checkboxes in edit project modal
+  const epmCont = document.getElementById('epm-members-cont');
+  if (epmCont) {
+    epmCont.innerHTML = USERS.map(function(u, i) {
+      return '<label class="member-label"><input type="checkbox" id="epm-' + u.initials.toLowerCase() + '"><div class="av ' + (avCls[i]||'av-a') + '" style="width:18px;height:18px;font-size:8px">' + u.initials + '</div>' + u.name.split(' ')[0] + '</label>';
+    }).join('');
+  }
+}
 function renderSidebarProjects() {
   // Remove existing proj-si items and their bars
   document.querySelectorAll('.sb-item.proj-si').forEach(el => {
@@ -2226,11 +2249,10 @@ function openEditProj(pid) {
 
   // Members
   const members = String(projData.members || '').split(',').filter(Boolean);
-  const cardResps = new Set();
-  row.querySelectorAll('.card[data-resp]').forEach(c => cardResps.add(c.dataset.resp));
-  document.getElementById('epm-br').checked = members.includes('BR') || cardResps.has('BR');
-  document.getElementById('epm-an').checked = members.includes('AN') || cardResps.has('AN');
-  document.getElementById('epm-ap').checked = members.includes('AP') || cardResps.has('AP');
+  USERS.forEach(function(u) {
+    const cb = document.getElementById('epm-' + u.initials.toLowerCase());
+    if (cb) cb.checked = members.includes(u.initials);
+  });
 
   document.getElementById('edit-proj-modal').classList.add('open');
   setTimeout(() => document.getElementById('edit-proj-name').focus(), 100);
@@ -2253,9 +2275,10 @@ function saveEditProj() {
   const newStart = document.getElementById('edit-proj-start').value;
   const newEnd   = document.getElementById('edit-proj-end').value;
   const members  = [];
-  if (document.getElementById('epm-br').checked) members.push('BR');
-  if (document.getElementById('epm-an').checked) members.push('AN');
-  if (document.getElementById('epm-ap').checked) members.push('AP');
+  USERS.forEach(function(u) {
+    const cb = document.getElementById('epm-' + u.initials.toLowerCase());
+    if (cb && cb.checked) members.push(u.initials);
+  });
 
   // Update PROJ model
   if (PROJ[pid]) {
