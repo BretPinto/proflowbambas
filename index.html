@@ -644,9 +644,6 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
         <select class="dr-sel" id="dr-resp" onchange="updateCardResp()">
         </select>
       </div>
-      <div class="dr-row"><i class="ti ti-calendar-event"></i><span>Inicio</span>
-        <input type="date" class="dr-date" id="dr-start" onchange="onDateChange()">
-      </div>
       <div class="dr-row"><i class="ti ti-calendar-due"></i><span>Vencimiento</span>
         <input type="date" class="dr-date" id="dr-end" onchange="onDateChange()">
       </div>
@@ -1932,11 +1929,9 @@ function openDrawer(card) {
 
   document.getElementById('dr-resp').value = resp;
 
-  // Populate start/end dates from TASKS[] first, then dataset fallback
-  const startISO = task && task.startDate ? task.startDate : (card.dataset.startDate || today());
-  const endISO   = task && task.date      ? dateStrToISO(task.date) : (card.dataset.endDate || '');
-  document.getElementById('dr-start').value = startISO;
-  document.getElementById('dr-end').value   = endISO;
+  // Populate end date (vencimiento) from task.date
+  const endISO = task && task.date ? dateStrToISO(task.date) : (card.dataset.endDate || '');
+  document.getElementById('dr-end').value = endISO;
 
   const depSel = document.getElementById('dr-dep');
   depSel.innerHTML = '<option value="">— ninguna —</option>';
@@ -2009,38 +2004,31 @@ function updateCardDep() {
 
 function onDateChange() {
   if (!activeCard) return;
-  const startVal = document.getElementById('dr-start').value;
-  const endVal   = document.getElementById('dr-end').value;
-  activeCard.dataset.startDate = startVal;
-  activeCard.dataset.endDate   = endVal;
-
-  // Persist to TASKS[]
+  const endVal = document.getElementById('dr-end').value;
   const task = getTask(activeCard.dataset.taskId);
   if (task && endVal) {
     const d = new Date(endVal + 'T00:00:00');
     const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     task.date = d.getDate() + ' ' + mns[d.getMonth()];
-    gasCall({ action: 'updateTask', id: activeCard.dataset.taskId, field: 'date', value: task.date }, null, null);
-  }
-  if (task && startVal) task.startDate = startVal;
-
-  // Re-render so all views see the new date
-  renderMatrix();
-  renderKanban();
-  renderTimeline();
-
-  // Auto-extend project bar on Timeline if end date exceeds it
-  const proj = activeCard.dataset.proj;
-  if (endVal && proj && PR[proj]) {
-    const d = new Date(endVal + 'T00:00:00');
-    const mi = d.getMonth(); // 0-based, matches TL_MONTHS index
-    if (mi < TL_MONTHS.length) {
-      const ep = TL_MONTHS[mi].s + ((d.getDate() - 1) / TL_MONTHS[mi].d) * 8.333;
-      const pr = PR[proj];
-      if (ep > pr.l + pr.w) { pr.w = ep - pr.l; syncProjBar(proj); toast('↳ Proyecto extendido automáticamente'); return; }
+    gasCall({ action: 'updateTask', id: task.id, field: 'date', value: task.date },
+      function(r) { if (r && r.ok === false) toast('⚠ Error al guardar fecha'); },
+      function()  { toast('⚠ Sin conexión al guardar fecha'); }
+    );
+    // Auto-extend project bar on Timeline if end date exceeds it
+    const proj = activeCard.dataset.proj;
+    if (proj && PR[proj]) {
+      const mi = d.getMonth();
+      if (mi < TL_MONTHS.length) {
+        const ep = TL_MONTHS[mi].s + ((d.getDate() - 1) / TL_MONTHS[mi].d) * 8.333;
+        const pr = PR[proj];
+        if (ep > pr.l + pr.w) { pr.w = ep - pr.l; syncProjBar(proj); }
+      }
     }
+    renderMatrix();
+    renderKanban();
+    renderTimeline();
+    toast('✓ Fecha actualizada');
   }
-  toast('✓ Fechas actualizadas');
 }
 
 function editTitle() {
@@ -2137,7 +2125,10 @@ function toggleSt(btn) {
         resp: item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : ''
       }));
       // Persist subtasks to GAS
-      gasCall({ action: 'updateTask', id: activeCard.dataset.taskId, field: 'subtasks', value: JSON.stringify(task.subtasks) }, null, null);
+      gasCall({ action: 'updateTask', id: activeCard.dataset.taskId, field: 'subtasks', value: JSON.stringify(task.subtasks) },
+        function(r) { if (r && r.ok === false) toast('⚠ Error GAS: ' + (r.error||'subtareas')); },
+        function()  { toast('⚠ Sin conexión al guardar subtarea'); }
+      );
       // Re-render cards so progress bars update immediately in both views
       renderMatrix();
       renderKanban();
@@ -2168,7 +2159,10 @@ function delSt(btn) {
     const task = getTask(activeCard.dataset.taskId);
     if (task) {
       task.subtasks = task.subtasks.filter(s => s.text !== text);
-      gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) }, null, null);
+      gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) },
+        function(r) { if (r && r.ok === false) toast('⚠ Error GAS: ' + (r.error||'subtareas')); },
+        function()  { toast('⚠ Sin conexión al eliminar subtarea'); }
+      );
     }
   }
   updateStProgress(); toast('Subtarea eliminada');
@@ -2196,7 +2190,10 @@ function saveStInline() {
       const task = getTask(activeCard.dataset.taskId);
       if (task) {
         task.subtasks.push({text:val, done:false, resp:''});
-        gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) }, null, null);
+        gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) },
+          function(r) { if (r && r.ok === false) toast('⚠ Error GAS: ' + (r.error||'subtareas')); },
+          function()  { toast('⚠ Sin conexión al guardar subtarea'); }
+        );
       }
     }
     updateStProgress(); toast('✓ Subtarea añadida');
