@@ -2755,6 +2755,9 @@ function updateTimelineBars() {
     if (prog) { prog.style.left = r.l+'%'; prog.style.width = r.w+'%'; }
   });
 }
+
+// Convert "28 May" style label → timeline % position
+function dateLabelToPct(label) {
   if (!label) return null;
   const clean = label.replace(/^[✓\s]+/, '').trim();
   const mns = {Ene:0,Feb:1,Mar:2,Abr:3,May:4,Jun:5,Jul:6,Ago:7,Sep:8,Oct:9,Nov:10,Dic:11};
