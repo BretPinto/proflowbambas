@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 17:22-->
+<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 17:27-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3017,3 +3017,151 @@ function openAddUser() {
 }
 
 function openEditUser(uid) {
+  const u = cachedUsers.find(function(x) { return x.id === uid; });
+  if (!u) return;
+  editingUserId = uid;
+  document.getElementById('user-modal-title').textContent = 'Editar usuario';
+  document.getElementById('umod-name').value     = u.name     || '';
+  document.getElementById('umod-email').value    = u.email    || '';
+  document.getElementById('umod-initials').value = u.initials || '';
+  document.getElementById('umod-pass').value     = '';
+  document.getElementById('umod-role').value     = u.role     || 'user';
+  document.getElementById('user-modal').classList.add('open');
+}
+
+function closeUserModal() { document.getElementById('user-modal').classList.remove('open'); editingUserId = null; }
+
+function saveUser() {
+  const name     = document.getElementById('umod-name').value.trim();
+  const email    = document.getElementById('umod-email').value.trim().toLowerCase();
+  const initials = document.getElementById('umod-initials').value.trim().toUpperCase();
+  const pass     = document.getElementById('umod-pass').value.trim();
+  const role     = document.getElementById('umod-role').value;
+  if (!name || !initials || !email) { toast('Completa nombre, correo e iniciales'); return; }
+
+  const uid = editingUserId || ('u' + Date.now());
+  const existing = cachedUsers.find(function(x) { return x.id === uid; });
+  const finalPass = pass || (existing ? (existing.password || '') : '');
+
+  gasCall({ action: 'saveUser', user: JSON.stringify({
+    id: uid, name, email, initials, role, password: finalPass, active: 'true'
+  })}, function() {
+    toast('✓ Usuario guardado');
+    closeUserModal();
+    renderUsers();
+  }, function(err) { toast('⚠ Error: ' + err); });
+}
+
+function toggleUserActive(uid, currentActive) {
+  const newVal = currentActive === 'true' ? 'false' : 'true';
+  gasCall({ action: 'updateUser', id: uid, field: 'active', value: newVal }, function() {
+    toast(newVal === 'true' ? '✓ Usuario activado' : 'Usuario desactivado');
+    renderUsers();
+  }, null);
+}
+
+function changeMyPassword() {
+  const p1 = document.getElementById('new-pass-1').value.trim();
+  const p2 = document.getElementById('new-pass-2').value.trim();
+  if (!p1) { toast('Escribe una nueva contraseña'); return; }
+  if (p1 !== p2) { toast('Las contraseñas no coinciden'); return; }
+  if (!currentUser) { toast('No hay sesión activa'); return; }
+  gasCall({ action: 'updateUser', id: currentUser.id, field: 'password', value: p1 }, function() {
+    toast('✓ Contraseña actualizada');
+    document.getElementById('new-pass-1').value = '';
+    document.getElementById('new-pass-2').value = '';
+  }, function(err) { toast('⚠ Error: ' + err); });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Check existing session
+  const saved = sessionLoad();
+  if (saved && saved.initials) {
+    applySession(saved);
+  } else {
+    // No session — show login
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-main').style.display = 'none';
+    setTimeout(() => document.getElementById('login-user').focus(), 100);
+  }
+
+  // Scroll to today on initial load
+  requestAnimationFrame(() => {
+    const scroll = document.querySelector('.tl-scroll');
+    const wrap = document.querySelector('.tl-wrap');
+    if (!scroll || !wrap) return;
+    const now = new Date();
+    const mi = now.getMonth();
+    if (mi < TL_MONTHS.length) {
+      const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
+      const scrollTo = (todayPct / 100) * wrap.scrollWidth - scroll.clientWidth / 2;
+      scroll.scrollLeft = Math.max(0, scrollTo);
+    }
+  });
+
+
+  // Project bar drag
+  document.querySelectorAll('.proj-bar-tl').forEach(bar => {
+    const pid = bar.dataset.proj;
+    bar.querySelectorAll('.drag-edge').forEach(edge => {
+      edge.addEventListener('mousedown', e => {
+        e.stopPropagation();
+        const role = edge.dataset.role;
+        const r = PR[pid];
+        const actSnap = {};
+        Object.entries(AR).filter(([,ar]) => ar.p === pid).forEach(([id,ar]) => actSnap[id] = {...ar});
+        startDrag(e, { type:'proj', bar, pid, role, origL:r.l, origW:r.w, actSnap });
+      });
+    });
+    bar.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('drag-edge')) return;
+      const r = PR[pid];
+      const actSnap = {};
+      Object.entries(AR).filter(([,ar]) => ar.p === pid).forEach(([id,ar]) => actSnap[id] = {...ar});
+      startDrag(e, { type:'proj', bar, pid, role:'move', origL:r.l, origW:r.w, actSnap });
+    });
+  });
+
+  // Activity bar drag
+  document.querySelectorAll('.act-bar-tl').forEach(bar => {
+    const id = bar.id, pid = bar.dataset.proj;
+    bar.querySelectorAll('.drag-edge').forEach(edge => {
+      edge.addEventListener('mousedown', e => {
+        e.stopPropagation();
+        const r = AR[id];
+        startDrag(e, { type:'act', bar, id, pid, role:edge.dataset.role, origL:r.l, origW:r.w });
+      });
+    });
+    bar.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('drag-edge')) return;
+      const r = AR[id];
+      startDrag(e, { type:'act', bar, id, pid, role:'move', origL:r.l, origW:r.w });
+    });
+  });
+
+  // Close project modal on overlay click
+  document.getElementById('proj-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeProjModal(); });
+  document.getElementById('edit-proj-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeEditProj(); });
+
+  // Close move popover + drawer on outside click
+  document.addEventListener('click', e => {
+    const mp = document.getElementById('move-popover');
+    if (mp.classList.contains('open') && !mp.contains(e.target) && !e.target.closest('[onclick*="toggleMovePopover"]')) {
+      mp.classList.remove('open');
+    }
+    const drawer = document.getElementById('drawer');
+    if (drawer.classList.contains('open') &&
+        !drawer.contains(e.target) &&
+        !e.target.closest('.card') &&
+        !e.target.closest('.kcard')) {
+      closeDrawer();
+    }
+  });
+
+  // Set today date on proj-start default
+  const ps = document.getElementById('proj-start');
+  if (ps && !ps.value) { const d = new Date(); ps.value = d.toISOString().split('T')[0]; }
+});
+</script>
+</body>
+</html>
