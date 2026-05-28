@@ -2166,7 +2166,10 @@ function delSt(btn) {
   item.remove();
   if (activeCard && activeCard.dataset.taskId) {
     const task = getTask(activeCard.dataset.taskId);
-    if (task) task.subtasks = task.subtasks.filter(s => s.text !== text);
+    if (task) {
+      task.subtasks = task.subtasks.filter(s => s.text !== text);
+      gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) }, null, null);
+    }
   }
   updateStProgress(); toast('Subtarea eliminada');
 }
@@ -2191,7 +2194,10 @@ function saveStInline() {
     document.getElementById('st-list').appendChild(item);
     if (activeCard && activeCard.dataset.taskId) {
       const task = getTask(activeCard.dataset.taskId);
-      if (task) task.subtasks.push({text:val, done:false, resp:''});
+      if (task) {
+        task.subtasks.push({text:val, done:false, resp:''});
+        gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) }, null, null);
+      }
     }
     updateStProgress(); toast('✓ Subtarea añadida');
   }
@@ -2210,32 +2216,24 @@ const PROJ_META = {};
 
 function openEditProj(pid) {
   editingProjId = pid;
-  const row = document.querySelector('.mx-row[data-proj="' + pid + '"]');
-  if (!row) return;
+  const projData = PROJ[pid];
+  if (!projData) return;
 
-  // Name
-  const nameEl = row.querySelector('.proj-name');
-  const nameText = Array.from(nameEl.childNodes).find(n => n.nodeType === 3 && n.textContent.trim());
-  document.getElementById('edit-proj-name').value = nameText ? nameText.textContent.trim() : '';
+  // Name — from model
+  document.getElementById('edit-proj-name').value = projData.name || '';
 
-  // Color — read from dot background
-  const dot = nameEl.querySelector('.dot');
-  const rawCol = dot ? dot.style.background.trim() : '#378ADD';
-  // Convert CSS var to hex if needed
+  // Color — from model
   const colMap = {'var(--p1)':'#378ADD','var(--p2)':'#639922','var(--p3)':'#BA7517','var(--p4)':'#D4537E'};
-  editSelColor = colMap[rawCol] || rawCol;
+  editSelColor = colMap[projData.col] || projData.col || '#378ADD';
   document.querySelectorAll('#edit-color-row .color-dot').forEach(d => {
-    const dc = d.dataset.color.toLowerCase();
-    const ec = editSelColor.toLowerCase();
-    d.classList.toggle('sel', dc === ec);
+    d.classList.toggle('sel', d.dataset.color.toLowerCase() === editSelColor.toLowerCase());
   });
 
-  // Dates — read from PROJ model (populated from GAS)
-  const projData = PROJ[pid] || {};
+  // Dates — from model (always up to date, even after drag)
   document.getElementById('edit-proj-start').value = projData.startISO || projData.start || '';
   document.getElementById('edit-proj-end').value   = projData.endISO   || projData.end   || '';
 
-  // Members
+  // Members — from model
   const members = String(projData.members || '').split(',').filter(Boolean);
   USERS.forEach(function(u) {
     const cb = document.getElementById('epm-' + u.initials.toLowerCase());
