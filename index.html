@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 15:44-->
+<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 15:46-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1594,19 +1594,12 @@ const STATUS = {todo:'To Do',doing:'Doing',done:'Done'};
 
 // ── Timeline: 12 months Jan–Dec 2026, proportional widths based on real days ──
 // s = start%, d = days in month
-// TL_MONTHS: s = cumulative start % based on real days (365 total), d = days in month
-// This must match the day-view header which also uses proportional widths
-const TL_MONTHS = (function() {
-  const days = [31,28,31,30,31,30,31,31,30,31,30,31];
-  const names = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const total = days.reduce((a,b) => a+b, 0); // 365
-  let cum = 0;
-  return days.map(function(d, i) {
-    const s = (cum / total) * 100;
-    cum += d;
-    return { n: names[i], s: Math.round(s * 1000) / 1000, d: d };
-  });
-})();
+const TL_MONTHS = [
+  {n:'Ene',s: 0.00,d:31},{n:'Feb',s: 8.49,d:28},{n:'Mar',s:16.16,d:31},
+  {n:'Abr',s:24.66,d:30},{n:'May',s:32.88,d:31},{n:'Jun',s:41.37,d:30},
+  {n:'Jul',s:49.59,d:31},{n:'Ago',s:58.08,d:31},{n:'Sep',s:66.58,d:30},
+  {n:'Oct',s:74.79,d:31},{n:'Nov',s:83.29,d:30},{n:'Dic',s:91.51,d:31}
+];
 
 // Conversion helper: month index (0=Ene) + day → %
 function dateToTLPct(monthIdx, day, daysInMonth) {
@@ -1614,27 +1607,19 @@ function dateToTLPct(monthIdx, day, daysInMonth) {
 }
 
 // Convert ISO date or "D Mon" label to timeline position
-// Returns {left, width} as strings (px in day view, % in month/week view)
-const TL_DAY_W = 28; // px per day in day view
-const TL_DAYS_CUM = (function() {
-  const days = [31,28,31,30,31,30,31,31,30,31,30,31];
-  let cum = 0; return days.map(d => { const s = cum; cum += d; return s; });
-})();
-
 function tlPctToStyle(pct, widthPct) {
-  // Always use % — works correctly for all views since bar-area is flex:1
   return 'left:' + pct + '%;width:' + widthPct + '%';
 }
 
 function tlDateToPct(isoOrLabel) {
-  // accepts "YYYY-MM-DD" or "D Mon"
   if (!isoOrLabel) return null;
   const s = String(isoOrLabel).trim();
+  // "YYYY-MM-DD" → convert to "D Mon" then use dateLabelToPct
   if (s.match(/^\d{4}-\d{2}-\d{2}/)) {
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     const parts = s.split('-');
-    const mi = parseInt(parts[1]) - 1;
-    const day = parseInt(parts[2]);
-    return ((TL_DAYS_CUM[mi] + day - 1) / 365) * 100;
+    const label = parseInt(parts[2]) + ' ' + months[parseInt(parts[1]) - 1];
+    return dateLabelToPct(label);
   }
   return dateLabelToPct(s);
 }
@@ -2826,9 +2811,9 @@ function renderTimeline() {
   const body = document.getElementById('tl-body');
   if (!body) return;
 
-  // Render proportional month labels (only in monthly view — weekly/daily override these)
+  // Set proportional month labels
   const labelsEl = document.getElementById('tl-month-labels');
-  if (labelsEl && labelsEl.children.length <= 1) {
+  if (labelsEl) {
     labelsEl.innerHTML = TL_MONTHS.map(function(m) {
       return '<div class="tl-month" style="flex:' + m.d + '">' + m.n.toUpperCase() + '</div>';
     }).join('');
