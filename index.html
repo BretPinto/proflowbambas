@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5 — 2026-05-28 — GAS v8 -->
+<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -732,7 +732,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 <div class="toast" id="toast"></div>
 
 <!-- Loading overlay — shown while GAS loads -->
-<div id="loading-overlay" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+<div id="loading-overlay" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px">
   <div style="font-size:28px;font-weight:700;color:var(--text);font-family:'DM Sans',sans-serif">ProFlow</div>
   <div style="display:flex;align-items:center;gap:10px;color:var(--text2);font-size:13px">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
@@ -945,6 +945,7 @@ function parseSheetDate(val) {
 // Load all data from Sheets and replace TASKS[] + PROJ
 function loadFromGAS() {
   var overlay = document.getElementById('loading-overlay');
+  if (overlay) overlay.style.display = 'flex'; // show during load
 
   var cbName = 'gasLoad_' + Date.now();
   var url = GAS_URL + '?action=getData&callback=' + cbName;
