@@ -904,8 +904,8 @@ function gasCall(params, onSuccess, onError) {
     delete window[cbName];
     if (document.head.contains(script)) document.head.removeChild(script);
   };
-  // Timeout safety — clean up after 10s even if no response
-  var timer = setTimeout(cleanup, 10000);
+  // Timeout safety — clean up after 20s even if no response
+  var timer = setTimeout(cleanup, 20000);
   window[cbName] = function(data) {
     clearTimeout(timer);
     cleanup();
@@ -965,7 +965,7 @@ function loadFromGAS() {
     if (document.head.contains(script)) document.head.removeChild(script);
     finishLoad();
     toast('⚠ Sin conexión — modo local');
-  }, 8000);
+  }, 20000);
 
   window[cbName] = function(data) {
     clearTimeout(timer);
@@ -1136,7 +1136,21 @@ function renderMatrix() {
     const projTasks = TASKS.filter(t => t.proj === pid);
     const done = projTasks.filter(t => t.status === 'done').length;
     const pct  = projTasks.length ? Math.round(done / projTasks.length * 100) : 0;
-    const fmt  = v => { if (!v) return '—'; const d = new Date(v+'T00:00:00'); return d.getDate()+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear(); };
+    const fmt  = v => {
+      if (!v || v === '—') return '—';
+      // Handle YYYY-MM-DD or DD/MM/YYYY or "1 May" style
+      var s = String(v).trim();
+      var d;
+      if (s.match(/^\d{4}-\d{2}-\d{2}/)) {
+        var parts = s.substring(0,10).split('-');
+        d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+      } else if (s.match(/^\d{1,2}\/\d{1,2}\/\d{4}/)) {
+        var parts2 = s.split('/');
+        d = new Date(parseInt(parts2[2]), parseInt(parts2[1])-1, parseInt(parts2[0]));
+      } else { return s; }
+      if (isNaN(d.getTime())) return s;
+      return d.getDate()+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear();
+    };
 
     let row = tbody.querySelector('tr.mx-row[data-proj="' + pid + '"]');
     if (!row) {
