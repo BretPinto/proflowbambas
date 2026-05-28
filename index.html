@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.1 — 2026-05-27 — GAS v7 -->
+<!-- ProFlow v10.2 — 2026-05-27 — GAS v8 -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1002,13 +1002,17 @@ function loadFromGAS() {
         var colors  = ['var(--p1)','var(--p2)','var(--p3)','var(--p4)'];
         var classes = ['kp1','kp2','kp3','kp4'];
         data.projects.forEach(function(p, i) {
+          var startISO = normalizeISODate(p.start);
+          var endISO   = normalizeISODate(p.end);
           PROJ[p.id] = {
-            name:    String(p.name    || ''),
-            col:     p.color || colors[i % 4],
-            cls:     classes[i % 4],
-            start:   normalizeISODate(p.start),
-            end:     normalizeISODate(p.end),
-            members: String(p.members || '')
+            name:     String(p.name    || ''),
+            col:      p.color || colors[i % 4],
+            cls:      classes[i % 4],
+            start:    startISO,
+            end:      endISO,
+            startISO: startISO,
+            endISO:   endISO,
+            members:  String(p.members || '')
           };
           if (!PROJ_TASKS[p.id]) PROJ_TASKS[p.id] = [];
         });
@@ -2217,8 +2221,8 @@ function openEditProj(pid) {
 
   // Dates — read from PROJ model (populated from GAS)
   const projData = PROJ[pid] || {};
-  document.getElementById('edit-proj-start').value = projData.start || '';
-  document.getElementById('edit-proj-end').value   = projData.end   || '';
+  document.getElementById('edit-proj-start').value = projData.startISO || projData.start || '';
+  document.getElementById('edit-proj-end').value   = projData.endISO   || projData.end   || '';
 
   // Members
   const members = String(projData.members || '').split(',').filter(Boolean);
@@ -2259,6 +2263,8 @@ function saveEditProj() {
     PROJ[pid].col     = editSelColor;
     PROJ[pid].start   = newStart;
     PROJ[pid].end     = newEnd;
+    PROJ[pid].startISO = newStart;
+    PROJ[pid].endISO   = newEnd;
     PROJ[pid].members = members.join(',');
   }
   if (PROJ_META[pid]) { PROJ_META[pid].start = newStart; PROJ_META[pid].end = newEnd; PROJ_META[pid].members = members; }
