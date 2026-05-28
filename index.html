@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.3 — 2026-05-28 — GAS v8 -->
+<!-- ProFlow v10.4 — 2026-05-28 — GAS v8 -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -353,7 +353,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
       <span id="sb-user-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
       <button onclick="doLogout()" title="Cerrar sesión" style="background:none;border:none;cursor:pointer;color:var(--text3);padding:2px;border-radius:4px" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'"><i class="ti ti-logout" style="font-size:14px"></i></button>
     </div>
-    <div style="padding:4px 14px 8px;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace" id="sb-version">v10.1</div>
+    <div style="padding:4px 14px 8px;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace" id="sb-version">v10.4</div>
   </div>
 </nav>
 <div class="sb-expand-fab" id="sb-fab" onclick="toggleSb()"><i class="ti ti-layout-sidebar-left-expand"></i></div>
@@ -656,9 +656,6 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
       <div class="dr-label">SUBTAREAS</div>
       <div class="st-prog-wrap"><div class="st-prog-bar" id="st-prog" style="width:33%"></div></div>
       <div id="st-list">
-        <div class="st-item"><button class="st-chk done" onclick="toggleSt(this)"></button><span class="st-txt done">Crear estructura de datos</span><select class="st-resp"><option value="">—</option><option value="BR" selected>BR</option><option value="AN">AN</option><option value="AP">AP</option></select><button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button></div>
-        <div class="st-item"><button class="st-chk" onclick="toggleSt(this)"></button><span class="st-txt">Configurar permisos</span><select class="st-resp"><option value="" selected>—</option><option value="BR">BR</option><option value="AN">AN</option><option value="AP">AP</option></select><button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button></div>
-        <div class="st-item"><button class="st-chk" onclick="toggleSt(this)"></button><span class="st-txt">Prueba con usuario externo</span><select class="st-resp"><option value="">—</option><option value="BR">BR</option><option value="AN" selected>AN</option><option value="AP">AP</option></select><button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button></div>
       </div>
       <div class="add-row" onclick="openStInline()" style="margin-top:4px"><i class="ti ti-plus"></i>Agregar subtarea</div>
       <div class="inline-wrap" id="st-inline-wrap">
@@ -787,7 +784,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 
 <script>
 'use strict';
-const APP_VERSION = 'v10.3 — 2026-05-28';
+const APP_VERSION = 'v10.4 — 2026-05-28';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GAS — Backend Google Apps Script (hardcoded, same pattern as Resomasa)
@@ -1100,16 +1097,12 @@ function populateUserSelects() {
 }
 function renderSidebarProjects() {
   // Remove existing proj-si items and their bars
-  document.querySelectorAll('.sb-item.proj-si').forEach(el => {
-    const bar = el.nextElementSibling;
-    if (bar && bar.classList.contains('proj-bar')) bar.remove();
-    el.remove();
-  });
+  document.querySelectorAll('.sb-item.proj-si, .proj-bar').forEach(el => el.remove());
 
-  const vistasSection = document.getElementById('sb-matrix') && document.getElementById('sb-matrix').previousElementSibling;
-  if (!vistasSection) return;
+  const sbSection = document.querySelector('.sb-section'); // "PROYECTOS" section label
+  if (!sbSection) return;
 
-  // Also update fsel-proj dropdown
+  // Update fsel-proj dropdown
   const fselProj = document.getElementById('fsel-proj');
   if (fselProj) {
     const current = fselProj.value;
@@ -1122,6 +1115,8 @@ function renderSidebarProjects() {
     });
   }
 
+  // Insert after the PROYECTOS section label, in correct order
+  let insertAfter = sbSection;
   Object.entries(PROJ).forEach(([pid, p]) => {
     const projTasks = TASKS.filter(t => t.proj === pid);
     const done = projTasks.filter(t => t.status === 'done').length;
@@ -1137,8 +1132,9 @@ function renderSidebarProjects() {
     pbarDiv.className = 'proj-bar';
     pbarDiv.innerHTML = '<div class="proj-bar-fill" style="width:' + pct + '%;background:' + (p.col||'#888') + '"></div>';
 
-    vistasSection.before(pbarDiv);
-    vistasSection.before(siDiv);
+    insertAfter.after(siDiv);
+    siDiv.after(pbarDiv);
+    insertAfter = pbarDiv;
   });
 }
 
@@ -1964,12 +1960,12 @@ function openDrawer(card) {
     (task.subtasks || []).forEach(st => {
       const item = document.createElement('div');
       item.className = 'st-item';
+      const respOpts = '<option value="">—</option>' + USERS.map(u =>
+        '<option value="' + u.initials + '"' + (st.resp===u.initials?' selected':'') + '>' + u.initials + '</option>'
+      ).join('');
       item.innerHTML = '<button class="st-chk' + (st.done?' done':'') + '" onclick="toggleSt(this)"></button>' +
         '<span class="st-txt' + (st.done?' done':'') + '">' + st.text + '</span>' +
-        '<select class="st-resp"><option value="">—</option>' +
-        '<option value="BR"' + (st.resp==='BR'?' selected':'') + '>BR</option>' +
-        '<option value="AN"' + (st.resp==='AN'?' selected':'') + '>AN</option>' +
-        '<option value="AP"' + (st.resp==='AP'?' selected':'') + '>AP</option></select>' +
+        '<select class="st-resp">' + respOpts + '</select>' +
         '<button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>';
       stList.appendChild(item);
     });
@@ -2194,7 +2190,8 @@ function saveStInline() {
   const inp = document.getElementById('st-inline-inp'); const val = inp.value.trim();
   if (val) {
     const item = document.createElement('div'); item.className = 'st-item';
-    item.innerHTML = '<button class="st-chk" onclick="toggleSt(this)"></button><span class="st-txt">' + val + '</span><select class="st-resp"><option value="" selected>—</option><option value="BR">BR</option><option value="AN">AN</option><option value="AP">AP</option></select><button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>';
+    const respOpts2 = '<option value="" selected>—</option>' + USERS.map(u => '<option value="' + u.initials + '">' + u.initials + '</option>').join('');
+    item.innerHTML = '<button class="st-chk" onclick="toggleSt(this)"></button><span class="st-txt">' + val + '</span><select class="st-resp">' + respOpts2 + '</select><button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>';
     document.getElementById('st-list').appendChild(item);
     if (activeCard && activeCard.dataset.taskId) {
       const task = getTask(activeCard.dataset.taskId);
@@ -2660,14 +2657,30 @@ function endDrag() {
     const startLabel = pctToLabel(pr.l);
     const endLabel   = pctToLabel(pr.l + pr.w);
 
-    // Update project date label in Matrix
+    // Update proj-dates display in Matrix
     const mxRow = document.querySelector('.mx-row[data-proj="' + pid + '"]');
     if (mxRow) {
       const d = mxRow.querySelector('.proj-dates');
       if (d) d.textContent = startLabel + ' — ' + endLabel;
     }
 
-    // Sync ALL activity bars of this project → TASKS[] via data-task-id
+    // Update PROJ model with new dates
+    if (PROJ[pid]) {
+      PROJ[pid].start = pctToISO(pr.l);
+      PROJ[pid].end   = pctToISO(pr.l + pr.w);
+      PROJ[pid].startISO = PROJ[pid].start;
+      PROJ[pid].endISO   = PROJ[pid].end;
+    }
+
+    // Save project dates to GAS
+    if (PROJ[pid]) {
+      gasCall({ action: 'saveProject', project: JSON.stringify({
+        id: pid, name: PROJ[pid].name, color: PROJ[pid].col,
+        start: PROJ[pid].start, end: PROJ[pid].end, members: PROJ[pid].members
+      })}, null, null);
+    }
+
+    // Update TASKS[] dates for activities that were dragged with the project
     Object.keys(AR).filter(actId => AR[actId].p === pid).forEach(actId => {
       const bar = document.getElementById(actId);
       if (!bar) return;
@@ -2675,28 +2688,36 @@ function endDrag() {
       if (!taskId) return;
       const task = getTask(taskId);
       if (!task) return;
-      const rawLabel = bar.querySelector('.bar-inner').textContent.trim();
-      task.date = barLabelToDate(rawLabel);
+      const rawLabel = bar.querySelector('.bar-inner') ? bar.querySelector('.bar-inner').textContent.trim() : '';
+      const newDate = barLabelToDate(rawLabel);
+      if (newDate) {
+        task.date = newDate;
+        gasCall({ action: 'updateTask', id: taskId, field: 'date', value: newDate }, null, null);
+      }
     });
 
     renderMatrix();
     renderKanban();
-    renderTimeline();
+    // Update timeline bars in place without full re-render
+    updateTimelineBars();
   }
 
   if (dragState.type === 'act' && dragState.id) {
     const actId = dragState.id;
     const bar = document.getElementById(actId);
     if (bar) {
-      // Lookup via data-task-id — no fragile string matching
       const taskId = bar.dataset.taskId;
       const task = taskId ? getTask(taskId) : null;
       if (task) {
-        const rawLabel = bar.querySelector('.bar-inner').textContent.trim();
-        task.date = barLabelToDate(rawLabel);
+        const rawLabel = bar.querySelector('.bar-inner') ? bar.querySelector('.bar-inner').textContent.trim() : '';
+        const newDate = barLabelToDate(rawLabel);
+        if (newDate) {
+          task.date = newDate;
+          // Save to GAS
+          gasCall({ action: 'updateTask', id: task.id, field: 'date', value: newDate }, null, null);
+        }
         renderMatrix();
         renderKanban();
-        renderTimeline();
       }
     }
   }
@@ -2709,8 +2730,33 @@ function endDrag() {
 // INIT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Convert "28 May" / "10 Jun" → % position in 12-month scale
-function dateLabelToPct(label) {
+// Convert % position to ISO date string YYYY-MM-DD
+function pctToISO(pct) {
+  const MNS_DAYS = [31,28,31,30,31,30,31,31,30,31,30,31];
+  var cumulative = 0;
+  for (var m = 0; m < 12; m++) {
+    var monthPct = (MNS_DAYS[m] / 365) * 100;
+    if (pct <= cumulative + monthPct) {
+      var dayPct = pct - cumulative;
+      var day = Math.round((dayPct / monthPct) * MNS_DAYS[m]);
+      day = Math.max(1, Math.min(MNS_DAYS[m], day));
+      return '2026-' + String(m+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+    }
+    cumulative += monthPct;
+  }
+  return '2026-12-31';
+}
+
+// Update timeline bar positions without full re-render (preserves drag positions)
+function updateTimelineBars() {
+  Object.entries(PR).forEach(([pid, r]) => {
+    const bar  = document.getElementById('pb-' + pid);
+    const prog = document.getElementById('pp-' + pid);
+    const bpo  = document.getElementById('bpo-' + pid);
+    if (bar)  { bar.style.left = r.l+'%'; bar.style.width = r.w+'%'; const inner = bar.querySelector('.bar-inner'); if(inner) inner.textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l+r.w); }
+    if (prog) { prog.style.left = r.l+'%'; prog.style.width = r.w+'%'; }
+  });
+}
   if (!label) return null;
   const clean = label.replace(/^[✓\s]+/, '').trim();
   const mns = {Ene:0,Feb:1,Mar:2,Abr:3,May:4,Jun:5,Jul:6,Ago:7,Sep:8,Oct:9,Nov:10,Dic:11};
