@@ -859,7 +859,7 @@ function doLogin() {
       errEl.style.display = 'block';
       document.getElementById('login-pass').value = '';
     }
-  }, function(err) {
+  }, function() {
     spinner.style.display = 'none';
     errEl.textContent = 'Error de conexión. Intenta de nuevo.';
     errEl.style.display = 'block';
@@ -909,11 +909,8 @@ function gasCall(params, onSuccess, onError) {
   window[cbName] = function(data) {
     clearTimeout(timer);
     cleanup();
-    if (data && data.ok === false) {
-      if (onError) onError(data.error || 'Error GAS');
-    } else {
-      if (onSuccess) onSuccess(data);
-    }
+    // ok:false is a valid GAS response (e.g. wrong password) — only call onError for network issues
+    if (onSuccess) onSuccess(data);
   };
   script.src = url;
   script.onerror = function() {
