@@ -1622,11 +1622,7 @@ const TL_DAYS_CUM = (function() {
 })();
 
 function tlPctToStyle(pct, widthPct) {
-  if (currentTLView === 'day') {
-    const leftPx  = (pct  / 100) * 365 * TL_DAY_W;
-    const widthPx = (widthPct / 100) * 365 * TL_DAY_W;
-    return 'left:' + leftPx + 'px;width:' + widthPx + 'px';
-  }
+  // Always use % — works correctly for all views since bar-area is flex:1
   return 'left:' + pct + '%;width:' + widthPct + '%';
 }
 
@@ -2601,18 +2597,14 @@ function syncProjBar(pid) {
   const r = PR[pid]; if (!r) return;
   const bar  = document.getElementById('pb-' + pid);
   const prog = document.getElementById('pp-' + pid);
-  const s = tlPctToStyle(r.l, r.w);
-  const [leftPart, widthPart] = s.split(';');
-  if (bar)  { bar.style.left = leftPart.split(':')[1]; bar.style.width = widthPart.split(':')[1]; bar.querySelector('.bar-inner').textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l + r.w); }
-  if (prog) { prog.style.left = leftPart.split(':')[1]; prog.style.width = widthPart.split(':')[1]; }
+  if (bar)  { bar.style.left = r.l + '%'; bar.style.width = r.w + '%'; const inner = bar.querySelector('.bar-inner'); if (inner) inner.textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l + r.w); }
+  if (prog) { prog.style.left = r.l + '%'; prog.style.width = r.w + '%'; }
 }
 
 function syncActBar(id) {
   const r = AR[id]; if (!r) return;
   const bar = document.getElementById(id);
-  const s = tlPctToStyle(r.l, r.w);
-  const [leftPart, widthPart] = s.split(';');
-  if (bar) { bar.style.left = leftPart.split(':')[1]; bar.style.width = widthPart.split(':')[1]; bar.querySelector('.bar-inner').textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l + r.w); }
+  if (bar) { bar.style.left = r.l + '%'; bar.style.width = r.w + '%'; const inner = bar.querySelector('.bar-inner'); if (inner) inner.textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l + r.w); }
 }
 
 function showDragTip(x, y, text) {
@@ -2810,19 +2802,8 @@ function updateTimelineBars() {
   Object.entries(PR).forEach(([pid, r]) => {
     const bar  = document.getElementById('pb-' + pid);
     const prog = document.getElementById('pp-' + pid);
-    const bpo  = document.getElementById('bpo-' + pid);
-    if (bar)  {
-      const s = tlPctToStyle(r.l, r.w).split(';');
-      bar.style.left  = s[0].split(':')[1];
-      bar.style.width = s[1].split(':')[1];
-      const inner = bar.querySelector('.bar-inner');
-      if (inner) inner.textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l + r.w);
-    }
-    if (prog) {
-      const s = tlPctToStyle(r.l, r.w).split(';');
-      prog.style.left  = s[0].split(':')[1];
-      prog.style.width = s[1].split(':')[1];
-    }
+    if (bar)  { bar.style.left = r.l+'%'; bar.style.width = r.w+'%'; const inner = bar.querySelector('.bar-inner'); if (inner) inner.textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l+r.w); }
+    if (prog) { prog.style.left = r.l+'%'; prog.style.width = r.w+'%'; }
   });
 }
 
@@ -2861,13 +2842,7 @@ function renderTimeline() {
   const now = new Date();
   const mi  = now.getMonth();
   const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
-  if (todayLine) {
-    if (currentTLView === 'day') {
-      todayLine.style.left = (todayPct / 100 * 365 * TL_DAY_W) + 'px';
-    } else {
-      todayLine.style.left = todayPct + '%';
-    }
-  }
+  if (todayLine) todayLine.style.left = todayPct + '%';
 
   const projIds = Object.keys(PROJ);
   if (projIds.length === 0) {
