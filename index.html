@@ -487,12 +487,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
           <div style="display:flex">
             <div style="width:230px;flex-shrink:0;position:sticky;left:0;z-index:4;background:var(--bg)"></div>
             <div class="tl-months" id="tl-month-labels" style="display:flex;flex:1">
-              <div class="tl-month">ENE</div><div class="tl-month">FEB</div>
-              <div class="tl-month">MAR</div><div class="tl-month">ABR</div>
-              <div class="tl-month">MAY</div><div class="tl-month">JUN</div>
-              <div class="tl-month">JUL</div><div class="tl-month">AGO</div>
-              <div class="tl-month">SEP</div><div class="tl-month">OCT</div>
-              <div class="tl-month">NOV</div><div class="tl-month">DIC</div>
+              <!-- populated by renderTimeline with proportional widths -->
             </div>
           </div>
           <div id="tl-week-hdr-row" style="display:none"><div style="display:flex"><div style="width:230px;flex-shrink:0;background:var(--bg);border-right:1px solid var(--border);position:sticky;left:0;z-index:4"></div><div id="tl-week-cells" style="flex:1;display:flex;overflow:hidden"></div></div></div>
@@ -1589,18 +1584,25 @@ function makeKcard(task) {
 
 const STATUS = {todo:'To Do',doing:'Doing',done:'Done'};
 
-// ── Timeline: 12 months Jan–Dec 2026, each = 8.333% ──────────────
+// ── Timeline: 12 months Jan–Dec 2026, proportional widths based on real days ──
 // s = start%, d = days in month
-const TL_MONTHS = [
-  {n:'Ene',s: 0.00,d:31},{n:'Feb',s: 8.33,d:28},{n:'Mar',s:16.67,d:31},
-  {n:'Abr',s:25.00,d:30},{n:'May',s:33.33,d:31},{n:'Jun',s:41.67,d:30},
-  {n:'Jul',s:50.00,d:31},{n:'Ago',s:58.33,d:31},{n:'Sep',s:66.67,d:30},
-  {n:'Oct',s:75.00,d:31},{n:'Nov',s:83.33,d:30},{n:'Dic',s:91.67,d:31}
-];
+// TL_MONTHS: s = cumulative start % based on real days (365 total), d = days in month
+// This must match the day-view header which also uses proportional widths
+const TL_MONTHS = (function() {
+  const days = [31,28,31,30,31,30,31,31,30,31,30,31];
+  const names = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const total = days.reduce((a,b) => a+b, 0); // 365
+  let cum = 0;
+  return days.map(function(d, i) {
+    const s = (cum / total) * 100;
+    cum += d;
+    return { n: names[i], s: Math.round(s * 1000) / 1000, d: d };
+  });
+})();
 
 // Conversion helper: month index (0=Ene) + day → %
 function dateToTLPct(monthIdx, day, daysInMonth) {
-  return TL_MONTHS[monthIdx].s + ((day - 1) / daysInMonth) * 8.333;
+  return TL_MONTHS[monthIdx].s + ((day - 1) / daysInMonth) * (daysInMonth / 365) * 100;
 }
 
 // PR = project bar positions {pid: {l:leftPct, w:widthPct}} — filled dynamically by renderTimeline()
@@ -1629,7 +1631,8 @@ function pctToLabel(p) {
   for (let i = TL_MONTHS.length - 1; i >= 0; i--) {
     if (p >= TL_MONTHS[i].s) { m = TL_MONTHS[i]; break; }
   }
-  const day = Math.max(1, Math.min(m.d, Math.round((p - m.s) / 8.333 * m.d)));
+  const monthWidthPct = (m.d / 365) * 100;
+  const day = Math.max(1, Math.min(m.d, Math.round((p - m.s) / monthWidthPct * m.d)));
   return day + ' ' + m.n;
 }
 
@@ -1956,7 +1959,7 @@ function openDrawer(card) {
       ).join('');
       item.innerHTML = '<button class="st-chk' + (st.done?' done':'') + '" onclick="toggleSt(this)"></button>' +
         '<span class="st-txt' + (st.done?' done':'') + '">' + st.text + '</span>' +
-        '<select class="st-resp">' + respOpts + '</select>' +
+        '<select class="st-resp" onchange="saveStResp(this)">' + respOpts + '</select>' +
         '<button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>';
       stList.appendChild(item);
     });
@@ -2019,7 +2022,7 @@ function onDateChange() {
     if (proj && PR[proj]) {
       const mi = d.getMonth();
       if (mi < TL_MONTHS.length) {
-        const ep = TL_MONTHS[mi].s + ((d.getDate() - 1) / TL_MONTHS[mi].d) * 8.333;
+        const ep = TL_MONTHS[mi].s + ((d.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
         const pr = PR[proj];
         if (ep > pr.l + pr.w) { pr.w = ep - pr.l; syncProjBar(proj); }
       }
@@ -2168,6 +2171,25 @@ function delSt(btn) {
   updateStProgress(); toast('Subtarea eliminada');
 }
 
+// Save subtask responsable when select changes
+function saveStResp(sel) {
+  if (!activeCard || !activeCard.dataset.taskId) return;
+  const task = getTask(activeCard.dataset.taskId);
+  if (!task) return;
+  // Rebuild subtasks from DOM (including new resp value)
+  task.subtasks = Array.from(document.querySelectorAll('#st-list .st-item')).map(function(item) {
+    return {
+      text: item.querySelector('.st-txt').textContent,
+      done: item.querySelector('.st-chk').classList.contains('done'),
+      resp: item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : ''
+    };
+  });
+  gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) },
+    function(r) { if (r && r.ok === false) toast('⚠ Error al guardar responsable'); },
+    function()  { toast('⚠ Sin conexión'); }
+  );
+}
+
 function openStInline() {
   document.getElementById('st-inline-wrap').classList.add('open');
   setTimeout(() => document.getElementById('st-inline-inp').focus(), 10);
@@ -2184,7 +2206,7 @@ function saveStInline() {
   if (val) {
     const item = document.createElement('div'); item.className = 'st-item';
     const respOpts2 = '<option value="" selected>—</option>' + USERS.map(u => '<option value="' + u.initials + '">' + u.initials + '</option>').join('');
-    item.innerHTML = '<button class="st-chk" onclick="toggleSt(this)"></button><span class="st-txt">' + val + '</span><select class="st-resp">' + respOpts2 + '</select><button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>';
+    item.innerHTML = '<button class="st-chk" onclick="toggleSt(this)"></button><span class="st-txt">' + val + '</span><select class="st-resp" onchange="saveStResp(this)">' + respOpts2 + '</select><button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>';
     document.getElementById('st-list').appendChild(item);
     if (activeCard && activeCard.dataset.taskId) {
       const task = getTask(activeCard.dataset.taskId);
@@ -2499,8 +2521,9 @@ function setTLView(view, btn) {
     }
   } else {
     // ── MONTHLY VIEW ──
-    labels.innerHTML = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC']
-      .map(m => '<div class="tl-month">' + m + '</div>').join('');
+    labels.innerHTML = TL_MONTHS.map(function(m) {
+      return '<div class="tl-month" style="flex:' + m.d + '">' + m.n.toUpperCase() + '</div>';
+    }).join('');
     if (wrap) wrap.style.minWidth = '1400px';
   }
 
@@ -2510,7 +2533,7 @@ function setTLView(view, btn) {
     const now = new Date();
     const mi = now.getMonth();
     if (mi < TL_MONTHS.length) {
-      const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * 8.333;
+      const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
       const scrollTo = (todayPct / 100) * wrap.scrollWidth - scroll.clientWidth / 2;
       scroll.scrollLeft = Math.max(0, scrollTo);
     }
@@ -2761,7 +2784,7 @@ function dateLabelToPct(label) {
   const day = parseInt(parts[0]);
   const mi  = mns[parts[1]];
   if (isNaN(day) || mi === undefined) return null;
-  return TL_MONTHS[mi].s + ((day - 1) / TL_MONTHS[mi].d) * 8.333;
+  return TL_MONTHS[mi].s + ((day - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
 }
 
 // Render timeline completely from PROJ + TASKS[] — no hardcoded HTML
@@ -2769,15 +2792,23 @@ function renderTimeline() {
   const body = document.getElementById('tl-body');
   if (!body) return;
 
+  // Render proportional month labels (only in monthly view — weekly/daily override these)
+  const labelsEl = document.getElementById('tl-month-labels');
+  if (labelsEl && labelsEl.children.length <= 1) {
+    labelsEl.innerHTML = TL_MONTHS.map(function(m) {
+      return '<div class="tl-month" style="flex:' + m.d + '">' + m.n.toUpperCase() + '</div>';
+    }).join('');
+  }
+
   // Keep today line, remove everything else
   const todayLine = document.getElementById('tl-today');
   body.innerHTML = '';
   if (todayLine) body.appendChild(todayLine);
 
-  // Today line position
+  // Today line position — uses TL_MONTHS proportional percentages
   const now = new Date();
   const mi  = now.getMonth();
-  const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * 8.333;
+  const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
   if (todayLine) todayLine.style.left = todayPct + '%';
 
   const projIds = Object.keys(PROJ);
@@ -3038,7 +3069,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const now = new Date();
     const mi = now.getMonth();
     if (mi < TL_MONTHS.length) {
-      const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * 8.333;
+      const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
       const scrollTo = (todayPct / 100) * wrap.scrollWidth - scroll.clientWidth / 2;
       scroll.scrollLeft = Math.max(0, scrollTo);
     }
