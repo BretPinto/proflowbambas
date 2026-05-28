@@ -32,7 +32,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 /* ─── SIDEBAR ──────────────────────────────────────────────────────────────── */
 .sb{width:210px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:width .2s,opacity .2s;overflow:hidden}
 .sb.collapsed{width:0;opacity:0;pointer-events:none}
-.sb-logo{padding:14px 16px;font-weight:600;font-size:15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;flex-shrink:0;letter-spacing:-.3px}
+.sb-logo{padding:0;font-weight:600;font-size:15px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:stretch;flex-shrink:0;letter-spacing:-.3px}
 .sb-logo-icon{width:28px;height:28px;background:var(--text);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;flex-shrink:0}
 .sb-logo span{flex:1}
 .sb-collapse-btn{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);border:none;background:transparent;transition:all .15s;flex-shrink:0}
@@ -336,11 +336,19 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 <!-- ══ SIDEBAR ══════════════════════════════════════════════════════════════ -->
 <nav class="sb" id="sb">
   <div class="sb-logo">
-    <div class="sb-logo-icon"><i class="ti ti-layout-kanban"></i></div>
-    <span>ProFlow</span>
-    <button class="sb-collapse-btn" onclick="toggleSb()" title="Colapsar menú">
-      <i class="ti ti-layout-sidebar-left-collapse"></i>
-    </button>
+    <!-- Red brand band with Las Bambas logo -->
+    <div style="background:#FF0000;padding:12px 16px;display:flex;align-items:center;justify-content:center">
+      <img src="https://raw.githubusercontent.com/BretPinto/proflowbambas/main/logolasbambas.png"
+           alt="Las Bambas" style="max-height:48px;max-width:140px;object-fit:contain;display:block">
+    </div>
+    <!-- ProFlow label row -->
+    <div style="display:flex;align-items:center;gap:9px;padding:10px 16px">
+      <div class="sb-logo-icon"><i class="ti ti-layout-kanban"></i></div>
+      <span style="flex:1">ProFlow</span>
+      <button class="sb-collapse-btn" onclick="toggleSb()" title="Colapsar menú">
+        <i class="ti ti-layout-sidebar-left-collapse"></i>
+      </button>
+    </div>
   </div>
   <div class="sb-section">PROYECTOS</div>
   <!-- project items populated by renderSidebarProjects() -->
@@ -490,8 +498,8 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
               <!-- populated by renderTimeline with proportional widths -->
             </div>
           </div>
-          <div id="tl-week-hdr-row" style="display:none"><div style="display:flex"><div style="width:230px;flex-shrink:0;background:var(--bg);border-right:1px solid var(--border);position:sticky;left:0;z-index:4"></div><div id="tl-week-cells" style="flex:1;display:flex;overflow:hidden"></div></div></div>
-          <div id="tl-day-hdr-row" style="display:none"><div style="display:flex"><div style="width:230px;flex-shrink:0;background:var(--bg);border-right:1px solid var(--border);position:sticky;left:0;z-index:4"></div><div id="tl-day-cells" style="flex:1;display:flex;overflow:hidden"></div></div></div>
+          <div id="tl-week-hdr-row" style="display:none"><div style="display:flex"><div style="width:230px;flex-shrink:0;background:var(--bg);border-right:1px solid var(--border);position:sticky;left:0;z-index:4"></div><div id="tl-week-cells" style="flex:1;display:flex"></div></div></div>
+          <div id="tl-day-hdr-row" style="display:none"><div style="display:flex"><div style="width:230px;flex-shrink:0;background:var(--bg);border-right:1px solid var(--border);position:sticky;left:0;z-index:4"></div><div id="tl-day-cells" style="flex:1;display:flex"></div></div></div>
         </div>
         <!-- Body — rendered dynamically by renderTimeline() -->
         <div class="tl-body" id="tl-body">
@@ -1605,8 +1613,35 @@ function dateToTLPct(monthIdx, day, daysInMonth) {
   return TL_MONTHS[monthIdx].s + ((day - 1) / daysInMonth) * (daysInMonth / 365) * 100;
 }
 
-// PR = project bar positions {pid: {l:leftPct, w:widthPct}} — filled dynamically by renderTimeline()
-const PR = {};
+// Convert ISO date or "D Mon" label to timeline position
+// Returns {left, width} as strings (px in day view, % in month/week view)
+const TL_DAY_W = 28; // px per day in day view
+const TL_DAYS_CUM = (function() {
+  const days = [31,28,31,30,31,30,31,31,30,31,30,31];
+  let cum = 0; return days.map(d => { const s = cum; cum += d; return s; });
+})();
+
+function tlPctToStyle(pct, widthPct) {
+  if (currentTLView === 'day') {
+    const leftPx  = (pct  / 100) * 365 * TL_DAY_W;
+    const widthPx = (widthPct / 100) * 365 * TL_DAY_W;
+    return 'left:' + leftPx + 'px;width:' + widthPx + 'px';
+  }
+  return 'left:' + pct + '%;width:' + widthPct + '%';
+}
+
+function tlDateToPct(isoOrLabel) {
+  // accepts "YYYY-MM-DD" or "D Mon"
+  if (!isoOrLabel) return null;
+  const s = String(isoOrLabel).trim();
+  if (s.match(/^\d{4}-\d{2}-\d{2}/)) {
+    const parts = s.split('-');
+    const mi = parseInt(parts[1]) - 1;
+    const day = parseInt(parts[2]);
+    return ((TL_DAYS_CUM[mi] + day - 1) / 365) * 100;
+  }
+  return dateLabelToPct(s);
+}
 
 // AR = activity bar positions {actId: {l, w, p}} — filled dynamically by renderTimeline()
 const AR = {};
@@ -1616,6 +1651,7 @@ const AR = {};
 // ═══════════════════════════════════════════════════════════════════════════════
 let activeCard = null;
 let sbOpen = true;
+let currentTLView = 'month'; // 'month' | 'week' | 'day'
 let filterOpen = false;
 let tlAllExpanded = true;
 let selProjColor = '#378ADD';
@@ -2405,6 +2441,7 @@ function toggleProj(taskGroupId, chevId) {
 }
 
 function setTLView(view, btn) {
+  currentTLView = view;
   document.querySelectorAll('.tl-view-btn').forEach(b => {
     b.style.background = 'transparent'; b.style.color = 'var(--text2)';
     b.style.border = '1px solid transparent'; b.style.boxShadow = 'none';
@@ -2527,8 +2564,9 @@ function setTLView(view, btn) {
     if (wrap) wrap.style.minWidth = '1400px';
   }
 
-  // After layout is set, scroll to today's position
+  // After layout is set, scroll to today and re-render bars for new view
   requestAnimationFrame(() => {
+    renderTimeline();
     if (!scroll || !wrap) return;
     const now = new Date();
     const mi = now.getMonth();
@@ -2561,16 +2599,20 @@ function toggleAllTL() {
 // ═══════════════════════════════════════════════════════════════════════════════
 function syncProjBar(pid) {
   const r = PR[pid]; if (!r) return;
-  const bar = document.getElementById('pb-' + pid);
+  const bar  = document.getElementById('pb-' + pid);
   const prog = document.getElementById('pp-' + pid);
-  if (bar) { bar.style.left = r.l + '%'; bar.style.width = r.w + '%'; bar.querySelector('.bar-inner').textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l + r.w); }
-  if (prog) { prog.style.left = r.l + '%'; prog.style.width = r.w + '%'; }
+  const s = tlPctToStyle(r.l, r.w);
+  const [leftPart, widthPart] = s.split(';');
+  if (bar)  { bar.style.left = leftPart.split(':')[1]; bar.style.width = widthPart.split(':')[1]; bar.querySelector('.bar-inner').textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l + r.w); }
+  if (prog) { prog.style.left = leftPart.split(':')[1]; prog.style.width = widthPart.split(':')[1]; }
 }
 
 function syncActBar(id) {
   const r = AR[id]; if (!r) return;
   const bar = document.getElementById(id);
-  if (bar) { bar.style.left = r.l + '%'; bar.style.width = r.w + '%'; bar.querySelector('.bar-inner').textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l + r.w); }
+  const s = tlPctToStyle(r.l, r.w);
+  const [leftPart, widthPart] = s.split(';');
+  if (bar) { bar.style.left = leftPart.split(':')[1]; bar.style.width = widthPart.split(':')[1]; bar.querySelector('.bar-inner').textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l + r.w); }
 }
 
 function showDragTip(x, y, text) {
@@ -2769,8 +2811,18 @@ function updateTimelineBars() {
     const bar  = document.getElementById('pb-' + pid);
     const prog = document.getElementById('pp-' + pid);
     const bpo  = document.getElementById('bpo-' + pid);
-    if (bar)  { bar.style.left = r.l+'%'; bar.style.width = r.w+'%'; const inner = bar.querySelector('.bar-inner'); if(inner) inner.textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l+r.w); }
-    if (prog) { prog.style.left = r.l+'%'; prog.style.width = r.w+'%'; }
+    if (bar)  {
+      const s = tlPctToStyle(r.l, r.w).split(';');
+      bar.style.left  = s[0].split(':')[1];
+      bar.style.width = s[1].split(':')[1];
+      const inner = bar.querySelector('.bar-inner');
+      if (inner) inner.textContent = pctToLabel(r.l) + ' — ' + pctToLabel(r.l + r.w);
+    }
+    if (prog) {
+      const s = tlPctToStyle(r.l, r.w).split(';');
+      prog.style.left  = s[0].split(':')[1];
+      prog.style.width = s[1].split(':')[1];
+    }
   });
 }
 
@@ -2805,11 +2857,17 @@ function renderTimeline() {
   body.innerHTML = '';
   if (todayLine) body.appendChild(todayLine);
 
-  // Today line position — uses TL_MONTHS proportional percentages
+  // Today line position
   const now = new Date();
   const mi  = now.getMonth();
   const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
-  if (todayLine) todayLine.style.left = todayPct + '%';
+  if (todayLine) {
+    if (currentTLView === 'day') {
+      todayLine.style.left = (todayPct / 100 * 365 * TL_DAY_W) + 'px';
+    } else {
+      todayLine.style.left = todayPct + '%';
+    }
+  }
 
   const projIds = Object.keys(PROJ);
   if (projIds.length === 0) {
@@ -2825,20 +2883,21 @@ function renderTimeline() {
     const pct  = projTasks.length ? Math.round(done / projTasks.length * 100) : 0;
 
     // ── Project date range → % ──────────────────────────────
-    let projL = 33, projW = 15; // defaults
+    let projL = 0, projW = 15; // defaults
     if (p.start) {
-      const ps = dateLabelToPct(parseSheetDate(p.start));
+      const ps = tlDateToPct(p.start);
       if (ps !== null) projL = ps;
     }
     if (p.end) {
-      const pe = dateLabelToPct(parseSheetDate(p.end));
-      if (pe !== null) projW = Math.max(4, pe - projL);
+      const pe = tlDateToPct(p.end);
+      if (pe !== null) projW = Math.max(0.5, pe - projL);
     }
     // Store in PR for drag compatibility
     PR[pid] = { l: projL, w: projW };
 
     const chevId = 'chev-' + pid;
     const groupId = 'tl-' + pid;
+    const barStyle = tlPctToStyle(projL, projW);
 
     // ── Project row ─────────────────────────────────────────
     const projRow = document.createElement('div');
@@ -2853,13 +2912,13 @@ function renderTimeline() {
         '<span class="tl-pct">' + pct + '%</span>' +
       '</div>' +
       '<div class="tl-bar-area">' +
-        '<div class="proj-bar-tl" id="pb-' + pid + '" data-proj="' + pid + '" style="left:' + projL + '%;width:' + projW + '%;background:' + (p.col||'#378ADD') + '">' +
+        '<div class="proj-bar-tl" id="pb-' + pid + '" data-proj="' + pid + '" style="' + barStyle + ';background:' + (p.col||'#378ADD') + '">' +
           '<div class="drag-edge left" data-role="left" data-proj="' + pid + '"></div>' +
           '<div class="bar-progress-overlay" id="bpo-' + pid + '" style="width:' + pct + '%;background:' + (p.col||'#378ADD') + '"></div>' +
           '<div class="bar-inner">' + pctToLabel(projL) + ' — ' + pctToLabel(projL + projW) + '</div>' +
           '<div class="drag-edge right" data-role="right" data-proj="' + pid + '"></div>' +
         '</div>' +
-        '<div class="proj-prog-tl" id="pp-' + pid + '" style="left:' + projL + '%;width:' + projW + '%;background:' + (p.col||'#378ADD') + '33">' +
+        '<div class="proj-prog-tl" id="pp-' + pid + '" style="' + barStyle + ';background:' + (p.col||'#378ADD') + '33">' +
           '<div style="width:' + pct + '%;height:100%;background:' + (p.col||'#378ADD') + '88;border-radius:2px"></div>' +
         '</div>' +
       '</div>';
@@ -2870,13 +2929,15 @@ function renderTimeline() {
     group.id = groupId;
     projTasks.forEach(function(task, idx) {
       const actId = 'ab-' + pid + '-' + idx;
-      const pct2 = dateLabelToPct(task.date);
-      const w = 4;
-      const left = pct2 !== null ? Math.max(0, pct2 - w) : projL + 5;
-      AR[actId] = { l: left, w: w, p: pid };
+      const pct2 = tlDateToPct(task.date);
+      const wPct = (1 / 365) * 100 * 2; // ~2 days wide
+      const left = pct2 !== null ? Math.max(0, pct2 - wPct) : projL + 2;
+      const actW = wPct * 2; // 4 days total bar width
+      AR[actId] = { l: left, w: actW, p: pid };
 
       const barCls = task.status === 'done' ? 'bar-ok' : task.status === 'doing' ? 'bar-doing' : 'bar-sl';
-      const label  = task.status === 'done' ? '✓ ' + task.date : task.status === 'doing' ? 'En curso' : (task.date || '—');
+      const label  = task.status === 'done' ? '✓ ' + task.date : task.status === 'doing' ? 'En curso — ' + (task.date||'—') : (task.date || '—');
+      const actBarStyle = tlPctToStyle(left, actW);
 
       const row = document.createElement('div');
       row.className = 'tl-task-row';
@@ -2884,7 +2945,7 @@ function renderTimeline() {
       row.innerHTML =
         '<div class="tl-lbl task">' + (task.status === 'done' ? '✓ ' : '') + task.title + '</div>' +
         '<div class="tl-bar-area">' +
-          '<div class="act-bar-tl ' + barCls + '" id="' + actId + '" data-proj="' + pid + '" data-task-id="' + task.id + '" style="left:' + left + '%;width:' + w + '%">' +
+          '<div class="act-bar-tl ' + barCls + '" id="' + actId + '" data-proj="' + pid + '" data-task-id="' + task.id + '" style="' + actBarStyle + '">' +
             '<div class="drag-edge left" data-role="left" data-act="' + actId + '"></div>' +
             '<div class="bar-inner">' + label + '</div>' +
             '<div class="drag-edge right" data-role="right" data-act="' + actId + '"></div>' +
