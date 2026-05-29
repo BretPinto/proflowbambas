@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 22:32 -->
+<!-- ProFlow v10.5.1 — 2026-05-29 — GAS v8 9:44-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2920,11 +2920,15 @@ function renderTimeline() {
   body.innerHTML = '';
   if (todayLine) body.appendChild(todayLine);
 
-  // Today line position
+  // Today line position — must account for the 230px label column
   const now = new Date();
   const mi  = now.getMonth();
   const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
-  if (todayLine) todayLine.style.left = todayPct + '%';
+  if (todayLine) {
+    // left = labelWidth + (todayPct% of bar area)
+    // Use CSS calc to stay responsive
+    todayLine.style.left = 'calc(230px + ' + todayPct + '% * ((100% - 230px) / 100%))';
+  }
 
   const projIds = Object.keys(PROJ);
   if (projIds.length === 0) {
