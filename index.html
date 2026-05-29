@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 22:19-->
+<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 22:32 -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -97,12 +97,12 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 
 /* ─── MATRIX ───────────────────────────────────────────────────────────────── */
 .mx-scroll{flex:1;overflow:auto}
-.mx-table{width:100%;border-collapse:collapse;min-width:660px}
+.mx-table{width:100%;border-collapse:collapse;min-width:660px;table-layout:fixed}
 .mx-th{font-size:11px;font-weight:600;padding:8px 12px;border:1px solid var(--border);text-align:left;position:sticky;top:0;z-index:2}
 .mx-th.th-proj{background:var(--white);min-width:160px;width:160px;color:var(--text3);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px}
-.mx-th.th-todo{background:#FEF0F0;color:#C0392B}
-.mx-th.th-doing{background:#FFF8E1;color:#B7770D}
-.mx-th.th-done{background:var(--green-bg);color:var(--green)}
+.mx-th.th-todo{background:#FEF0F0;color:#C0392B;width:calc((100% - 160px)/3)}
+.mx-th.th-doing{background:#FFF8E1;color:#B7770D;width:calc((100% - 160px)/3)}
+.mx-th.th-done{background:var(--green-bg);color:var(--green);width:calc((100% - 160px)/3)}
 .mx-th .cnt{margin-left:auto;font-size:10px;opacity:.5;font-weight:400}
 .mx-td{vertical-align:top;padding:8px;border:1px solid var(--border)}
 .mx-td.td-proj{padding:11px 12px;background:var(--white)}
@@ -1226,6 +1226,8 @@ function renderTareas() {
 
   const statusFilter = (document.getElementById('tsk-status') || {}).value || 'all';
   const projFilter   = (document.getElementById('tsk-proj')   || {}).value || 'all';
+  // Also respect global resp filter
+  const respFilter   = (document.getElementById('filter-resp') || {}).value || 'all';
 
   // Collect all subtasks with their parent activity + project
   const rows = [];
@@ -1235,6 +1237,7 @@ function renderTareas() {
     (task.subtasks || []).forEach(function(st) {
       if (statusFilter === 'pending' && st.done) return;
       if (statusFilter === 'done'    && !st.done) return;
+      if (respFilter !== 'all' && st.resp !== respFilter && task.resp !== respFilter) return;
       rows.push({ st, task, proj });
     });
   });
@@ -1252,7 +1255,7 @@ function renderTareas() {
     if (!list.length) return '';
     return '<div style="margin-bottom:24px">' +
       '<div style="font-size:11px;font-weight:700;color:' + color + ';letter-spacing:.6px;margin-bottom:10px;text-transform:uppercase">' + label + ' (' + list.length + ')</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' +
+      '<div style="display:flex;flex-direction:column;gap:6px">' +
       list.map(function(r) {
         const dotColor = r.proj.col || '#888';
         return '<div style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px">' +
@@ -1270,8 +1273,10 @@ function renderTareas() {
       '</div></div>';
   }
 
-  body.innerHTML = renderGroup(pending, 'Por hacer', 'var(--amber)') +
-                   renderGroup(done,    'Completadas', 'var(--green)');
+  body.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+    '<div>' + renderGroup(pending, 'Por hacer', 'var(--amber)') + '</div>' +
+    '<div>' + renderGroup(done,    'Completadas', 'var(--green)') + '</div>' +
+    '</div>';
 }
 
 function renderMatrix() {
@@ -1603,6 +1608,8 @@ function reapplyFiltersIfActive() {
   const proj   = document.getElementById('fsel-proj') ? document.getElementById('fsel-proj').value : 'all';
   const resp   = document.getElementById('fsel-resp') ? document.getElementById('fsel-resp').value : 'all';
   if (search || proj !== 'all' || resp !== 'all' || activeStatusFilter !== null) applyFilters();
+  // Re-render tareas if that view is active
+  if (document.getElementById('view-tareas') && document.getElementById('view-tareas').classList.contains('active')) renderTareas();
 }
 
 // ── BUILD CARD ELEMENT (matrix) ───────────────────────────────
