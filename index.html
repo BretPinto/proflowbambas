@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 17:27-->
+<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 19:56-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -357,6 +357,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
   <div class="sb-item" id="sb-kanban" onclick="switchView('kanban',this)"><i class="ti ti-layout-columns"></i>Kanban global</div>
   <div class="sb-item" id="sb-timeline" onclick="switchView('timeline',this)"><i class="ti ti-timeline"></i>Timeline</div>
   <div class="sb-item" id="sb-reportes" onclick="switchView('reportes',this)"><i class="ti ti-report-analytics"></i>Reportes</div>
+  <div class="sb-item" id="sb-tareas" onclick="switchView('tareas',this)"><i class="ti ti-checkbox"></i>Tareas</div>
   <div class="sb-footer">
     <div class="sb-item" onclick="openNewProj()"><i class="ti ti-plus"></i>Nuevo proyecto</div>
     <div class="sb-item" id="sb-ajustes" onclick="switchView('ajustes',this)" style="display:none"><i class="ti ti-settings"></i>Ajustes</div>
@@ -511,7 +512,6 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 
   <!-- ══ REPORTES ══ -->
   <div class="view" id="view-reportes" style="padding:24px;overflow-y:auto">
-
     <!-- Filtros del reporte -->
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap">
       <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">Reportes</h2>
@@ -560,6 +560,24 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
       </div>
     </div>
 
+  </div>
+
+  <!-- ══ TAREAS ══ -->
+  <div class="view" id="view-tareas" style="padding:24px;overflow-y:auto">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">Tareas</h2>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="tsk-status" onchange="renderTareas()" class="fsel">
+          <option value="all">Todos los estados</option>
+          <option value="pending">Por hacer</option>
+          <option value="done">Completadas</option>
+        </select>
+        <select id="tsk-proj" onchange="renderTareas()" class="fsel">
+          <option value="all">Todos los proyectos</option>
+        </select>
+      </div>
+    </div>
+    <div id="tareas-body"></div>
   </div>
 
   <!-- ══ AJUSTES ══ -->
@@ -1189,6 +1207,73 @@ function autoStatusFromSubtasks(taskId) {
 }
 
 // ── RENDER MATRIX ────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// VISTA TAREAS — subtareas agrupadas por estado
+// ═══════════════════════════════════════════════════════════════════════════════
+function renderTareas() {
+  const body = document.getElementById('tareas-body');
+  if (!body) return;
+
+  // Populate project filter
+  const projSel = document.getElementById('tsk-proj');
+  if (projSel && projSel.options.length === 1) {
+    Object.keys(PROJ).forEach(function(pid) {
+      const opt = document.createElement('option');
+      opt.value = pid; opt.textContent = PROJ[pid].name;
+      projSel.appendChild(opt);
+    });
+  }
+
+  const statusFilter = (document.getElementById('tsk-status') || {}).value || 'all';
+  const projFilter   = (document.getElementById('tsk-proj')   || {}).value || 'all';
+
+  // Collect all subtasks with their parent activity + project
+  const rows = [];
+  TASKS.forEach(function(task) {
+    if (projFilter !== 'all' && task.proj !== projFilter) return;
+    const proj = PROJ[task.proj] || {};
+    (task.subtasks || []).forEach(function(st) {
+      if (statusFilter === 'pending' && st.done) return;
+      if (statusFilter === 'done'    && !st.done) return;
+      rows.push({ st, task, proj });
+    });
+  });
+
+  if (rows.length === 0) {
+    body.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text3);font-size:13px">Sin tareas para mostrar</div>';
+    return;
+  }
+
+  // Group: pending first, then done
+  const pending = rows.filter(r => !r.st.done);
+  const done    = rows.filter(r =>  r.st.done);
+
+  function renderGroup(list, label, color) {
+    if (!list.length) return '';
+    return '<div style="margin-bottom:24px">' +
+      '<div style="font-size:11px;font-weight:700;color:' + color + ';letter-spacing:.6px;margin-bottom:10px;text-transform:uppercase">' + label + ' (' + list.length + ')</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px">' +
+      list.map(function(r) {
+        const dotColor = r.proj.col || '#888';
+        return '<div style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px">' +
+          '<div style="width:10px;height:10px;border-radius:50%;background:' + dotColor + ';flex-shrink:0"></div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="font-size:13px;font-weight:600;color:' + (r.st.done ? 'var(--text3)' : 'var(--text)') + ';' + (r.st.done ? 'text-decoration:line-through;' : '') + '">' + r.st.text + '</div>' +
+            '<div style="font-size:11px;color:var(--text3);margin-top:2px">' +
+              '<span style="color:' + dotColor + ';font-weight:600">' + (r.proj.name || '—') + '</span>' +
+              ' · ' + r.task.title +
+            '</div>' +
+          '</div>' +
+          (r.st.resp ? '<div class="av ' + getAvClass(r.st.resp) + '" style="width:22px;height:22px;font-size:9px;flex-shrink:0">' + r.st.resp + '</div>' : '') +
+        '</div>';
+      }).join('') +
+      '</div></div>';
+  }
+
+  body.innerHTML = renderGroup(pending, 'Por hacer', 'var(--amber)') +
+                   renderGroup(done,    'Completadas', 'var(--green)');
+}
+
 function renderMatrix() {
   const tbody = document.getElementById('mx-tbody');
   if (!tbody) return;
@@ -1791,6 +1876,7 @@ function switchView(v, sbEl, tabEl) {
     kanban:'Kanban global — todas las tareas',
     timeline:'Timeline — todos los proyectos',
     reportes:'Reportes',
+    tareas:'Tareas',
     ajustes:'Ajustes'
   };
   document.getElementById('tb-title').textContent = titles[v] || v;
@@ -1805,6 +1891,7 @@ function switchView(v, sbEl, tabEl) {
   const tlToggle = document.getElementById('tl-view-toggle');
   if (tlToggle) tlToggle.style.display = v === 'timeline' ? 'flex' : 'none';
   if (v === 'reportes') renderReports();
+  if (v === 'tareas')   renderTareas();
   if (v === 'ajustes') renderUsers();
   closeDrawer();
 }
