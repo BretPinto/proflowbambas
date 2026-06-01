@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.1 — 2026-05-29 — GAS v8 9:44-->
+<!-- ProFlow v10.5.1 — 01/06/26 — GAS v8 18:38-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -665,6 +665,9 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
         <select class="dr-sel" id="dr-resp" onchange="updateCardResp()">
         </select>
       </div>
+      <div class="dr-row"><i class="ti ti-calendar-plus"></i><span>Inicio</span>
+        <input type="date" class="dr-date" id="dr-start" onchange="onStartDateChange()">
+      </div>
       <div class="dr-row"><i class="ti ti-calendar-due"></i><span>Vencimiento</span>
         <input type="date" class="dr-date" id="dr-end" onchange="onDateChange()">
       </div>
@@ -1036,15 +1039,16 @@ function loadFromGAS() {
             if (raw.startsWith('[')) subs = JSON.parse(raw);
           } catch(e) { subs = []; }
           TASKS.push({
-            id:       String(t.id),
-            proj:     String(t.proj),
-            title:    String(t.title),
-            status:   String(t.status   || 'todo'),
-            resp:     String(t.resp     || ''),
-            date:     parseSheetDate(t.date),
-            priority: String(t.priority || 'medium'),
-            dep:      String(t.dep      || ''),
-            subtasks: subs
+            id:        String(t.id),
+            proj:      String(t.proj),
+            title:     String(t.title),
+            status:    String(t.status    || 'todo'),
+            resp:      String(t.resp      || ''),
+            date:      parseSheetDate(t.date),
+            startdate: parseSheetDate(t.startdate),
+            priority:  String(t.priority  || 'medium'),
+            dep:       String(t.dep       || ''),
+            subtasks:  subs
           });
         });
       }
@@ -1639,10 +1643,14 @@ function makeCard(task) {
       '</div>'
     : '';
 
+  const dateRange = task.startdate && task.date
+    ? task.startdate + ' → ' + task.date
+    : task.date || (task.startdate ? 'Inicio: ' + task.startdate : '');
+
   card.innerHTML = '<div class="card-title">' + task.title + '</div>' +
     '<div class="card-meta">' +
       '<div class="av ' + avatarClass + '">' + (task.resp || '?') + '</div>' +
-      (task.date ? '<div class="' + dateClass + '"><i class="ti ' + dateIcon + '"></i>' + task.date + '</div>' : '') +
+      (dateRange ? '<div class="' + dateClass + '"><i class="ti ' + dateIcon + '"></i>' + dateRange + '</div>' : '') +
     '</div>' +
     progressHTML;
   return card;
@@ -1673,13 +1681,17 @@ function makeKcard(task) {
       '</div>'
     : '';
 
+  const dateRangeK = task.startdate && task.date
+    ? task.startdate + ' → ' + task.date
+    : task.date || (task.startdate ? 'Inicio: ' + task.startdate : '');
+
   kcard.innerHTML =
     '<div class="kcard-proj"><span class="dot" style="background:' + (proj.col||'#888') + ';width:6px;height:6px"></span>' + (proj.name||task.proj) + '</div>' +
     '<div class="kcard-title">' + task.title + '</div>' +
     progressHTML +
     '<div class="kcard-foot">' +
       '<div class="av ' + avatarClass + '">' + (task.resp||'?') + '</div>' +
-      (task.date ? '<div class="' + dateClass + '"><i class="ti ti-calendar"></i>' + task.date + '</div>' : '') +
+      (dateRangeK ? '<div class="' + dateClass + '"><i class="ti ti-calendar"></i>' + dateRangeK + '</div>' : '') +
     '</div>';
   return kcard;
 }
@@ -1931,7 +1943,8 @@ function saveInline(inp) {
   const proj = inp.dataset.proj, status = inp.dataset.status;
   const newId = 't' + Date.now();
   const defaultResp = currentUser ? currentUser.initials : (USERS.length ? USERS[0].initials : '');
-  const newTask = {id:newId, proj, title:val, status, resp:defaultResp, date:'', priority:'medium', dep:'', subtasks:[]};
+  const todayStr = today();
+  const newTask = {id:newId, proj, title:val, status, resp:defaultResp, date:'', startdate:todayStr, priority:'medium', dep:'', subtasks:[]};
   TASKS.push(newTask);
   rebuildProjTasks();
   renderMatrix();
@@ -1939,7 +1952,7 @@ function saveInline(inp) {
   renderTimeline();
   // Persist to GAS
   gasCall({ action:'saveTask', task: JSON.stringify({
-    id:newId, proj, title:val, status, resp:defaultResp, date:'', priority:'medium', dep:'', subtasks:'[]'
+    id:newId, proj, title:val, status, resp:defaultResp, date:'', startdate:todayStr, priority:'medium', dep:'', subtasks:'[]'
   })}, null, null);
   inp.value = ''; wrap.classList.remove('open');
   toast('✓ Actividad añadida');
@@ -1983,13 +1996,13 @@ function saveKAdd(fid) {
   // Add to TASKS[] — single source of truth
   TASKS.push({
     id: newId, proj, title: val, status, resp,
-    date: '', priority: 'medium', dep: '', subtasks: []
+    date: '', startdate: today(), priority: 'medium', dep: '', subtasks: []
   });
 
   // Persist to GAS
   gasCall({ action: 'saveTask', task: JSON.stringify({
     id: newId, proj, title: val, status, resp,
-    date: '', priority: 'medium', dep: '', subtasks: '[]'
+    date: '', startdate: today(), priority: 'medium', dep: '', subtasks: '[]'
   })}, null, null);
 
   // Re-render both views from TASKS[]
@@ -2045,6 +2058,10 @@ function openDrawer(card) {
   sp.className = 'pill pill-' + (status === 'doing' ? 'do' : status === 'done' ? 'dn' : 'td');
 
   document.getElementById('dr-resp').value = resp;
+
+  // Populate start date — default to today if empty
+  const startISO = task && task.startdate ? (task.startdate.match(/^\d{4}-\d{2}-\d{2}/) ? task.startdate : dateStrToISO(task.startdate)) : today();
+  document.getElementById('dr-start').value = startISO;
 
   // Populate end date (vencimiento) from task.date
   const endISO = task && task.date ? dateStrToISO(task.date) : (card.dataset.endDate || '');
@@ -2117,6 +2134,25 @@ function updateCardDep() {
   activeCard.dataset.dep = val;
   const task = getTask(activeCard.dataset.taskId);
   if (task) task.dep = val;
+}
+
+function onStartDateChange() {
+  if (!activeCard) return;
+  const startVal = document.getElementById('dr-start').value;
+  const task = getTask(activeCard.dataset.taskId);
+  if (task && startVal) {
+    const d = new Date(startVal + 'T00:00:00');
+    const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    task.startdate = d.getDate() + ' ' + mns[d.getMonth()];
+    gasCall({ action: 'updateTask', id: task.id, field: 'startdate', value: task.startdate },
+      function(r) { if (r && r.ok === false) toast('⚠ Error al guardar fecha inicio'); },
+      function()  { toast('⚠ Sin conexión al guardar fecha inicio'); }
+    );
+    renderMatrix();
+    renderKanban();
+    renderTimeline();
+    toast('✓ Fecha inicio actualizada');
+  }
 }
 
 function onDateChange() {
@@ -2841,12 +2877,16 @@ function endDrag() {
       const taskId = bar.dataset.taskId;
       const task = taskId ? getTask(taskId) : null;
       if (task) {
-        const rawLabel = bar.querySelector('.bar-inner') ? bar.querySelector('.bar-inner').textContent.trim() : '';
-        const newDate = barLabelToDate(rawLabel);
-        if (newDate) {
-          task.date = newDate;
-          // Save to GAS
-          gasCall({ action: 'updateTask', id: task.id, field: 'date', value: newDate }, null, null);
+        const ar = AR[actId];
+        const newStartLabel = pctToLabel(ar.l);
+        const newEndLabel   = pctToLabel(ar.l + ar.w);
+        if (newEndLabel) {
+          task.date = newEndLabel;
+          gasCall({ action: 'updateTask', id: task.id, field: 'date', value: newEndLabel }, null, null);
+        }
+        if (newStartLabel) {
+          task.startdate = newStartLabel;
+          gasCall({ action: 'updateTask', id: task.id, field: 'startdate', value: newStartLabel }, null, null);
         }
         renderMatrix();
         renderKanban();
@@ -2920,15 +2960,11 @@ function renderTimeline() {
   body.innerHTML = '';
   if (todayLine) body.appendChild(todayLine);
 
-  // Today line position — must account for the 230px label column
+  // Today line position
   const now = new Date();
   const mi  = now.getMonth();
   const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
-  if (todayLine) {
-    // left = labelWidth + (todayPct% of bar area)
-    // Use CSS calc to stay responsive
-    todayLine.style.left = 'calc(230px + ' + todayPct + '% * ((100% - 230px) / 100%))';
-  }
+  if (todayLine) todayLine.style.left = todayPct + '%';
 
   const projIds = Object.keys(PROJ);
   if (projIds.length === 0) {
@@ -2990,14 +3026,17 @@ function renderTimeline() {
     group.id = groupId;
     projTasks.forEach(function(task, idx) {
       const actId = 'ab-' + pid + '-' + idx;
-      const pct2 = tlDateToPct(task.date);
-      const wPct = (1 / 365) * 100 * 2; // ~2 days wide
-      const left = pct2 !== null ? Math.max(0, pct2 - wPct) : projL + 2;
-      const actW = wPct * 2; // 4 days total bar width
+      const pctEnd   = tlDateToPct(task.date);
+      const pctStart = task.startdate ? tlDateToPct(task.startdate) : null;
+      const left  = pctStart !== null ? Math.max(projL, pctStart) : (pctEnd !== null ? Math.max(0, pctEnd - (1/365)*100*4) : projL + 2);
+      const right = pctEnd  !== null ? pctEnd : (left + (1/365)*100*4);
+      const actW  = Math.max((1/365)*100*1, right - left);
       AR[actId] = { l: left, w: actW, p: pid };
 
+      const startLabel = task.startdate || pctToLabel(left);
+      const endLabel   = task.date      || pctToLabel(left + actW);
       const barCls = task.status === 'done' ? 'bar-ok' : task.status === 'doing' ? 'bar-doing' : 'bar-sl';
-      const label  = task.status === 'done' ? '✓ ' + task.date : task.status === 'doing' ? 'En curso — ' + (task.date||'—') : (task.date || '—');
+      const label  = task.status === 'done' ? '✓ ' + endLabel : (startLabel !== endLabel ? startLabel + ' — ' + endLabel : endLabel);
       const actBarStyle = tlPctToStyle(left, actW);
 
       const row = document.createElement('div');
