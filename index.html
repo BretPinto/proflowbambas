@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.1 — 01/06/26 — GAS v8 18:38-->
+<!-- ProFlow v10.5.1 — 2026-06-01 — GAS v8 18:54-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -262,6 +262,12 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .st-del{font-size:13px;color:var(--border2);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;flex-shrink:0}
 .st-item:hover .st-del{opacity:1}
 .st-del:hover{color:var(--red)}
+.st-drag-handle{font-size:14px;color:var(--border2);cursor:grab;opacity:0;transition:opacity .15s;flex-shrink:0;line-height:1;padding:0 2px;user-select:none}
+.st-item:hover .st-drag-handle{opacity:1}
+.st-item.dragging{opacity:.4;background:var(--bg2);border-radius:6px}
+.st-item.drag-over-top{border-top:2px solid var(--blue)}
+.st-item.drag-over-bottom{border-bottom:2px solid var(--blue)}
+.card.st-drop-target,.kcard.st-drop-target{box-shadow:0 0 0 2px var(--blue),0 4px 16px rgba(0,0,0,.10)!important;background:var(--blue-bg)!important;transform:translateY(-1px)}
 .dr-actions{display:flex;gap:6px}
 .dr-del-btn{padding:6px 10px;font-size:12px;border:1px solid #FCA5A5;border-radius:8px;cursor:pointer;background:var(--white);color:var(--red);display:flex;align-items:center;gap:4px;font-weight:500;transition:all .15s}
 .dr-del-btn:hover{background:var(--red-bg)}
@@ -2083,23 +2089,229 @@ function openDrawer(card) {
   if (stList && task) {
     stList.innerHTML = '';
     (task.subtasks || []).forEach(st => {
-      const item = document.createElement('div');
-      item.className = 'st-item';
-      const respOpts = '<option value="">—</option>' + USERS.map(u =>
-        '<option value="' + u.initials + '"' + (st.resp===u.initials?' selected':'') + '>' + u.initials + '</option>'
-      ).join('');
-      item.innerHTML = '<button class="st-chk' + (st.done?' done':'') + '" onclick="toggleSt(this)"></button>' +
-        '<span class="st-txt' + (st.done?' done':'') + '">' + st.text + '</span>' +
-        '<select class="st-resp" onchange="saveStResp(this)">' + respOpts + '</select>' +
-        '<button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>';
-      stList.appendChild(item);
+      stList.appendChild(makeStItem(st));
     });
+    initStDrag(stList);
+    _attachCrossDrag(stList);
   }
   updateStProgress();
   document.getElementById('drawer').classList.add('open');
 }
 
 function closeDrawer() { document.getElementById('drawer').classList.remove('open'); }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SUBTASK DRAG — reorder within activity + move between activities
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Build a single st-item element (with drag handle)
+function makeStItem(st) {
+  const item = document.createElement('div');
+  item.className = 'st-item';
+  item.draggable = true;
+  const respOpts = '<option value="">—</option>' + USERS.map(function(u) {
+    return '<option value="' + u.initials + '"' + (st.resp === u.initials ? ' selected' : '') + '>' + u.initials + '</option>';
+  }).join('');
+  item.innerHTML =
+    '<span class="st-drag-handle" title="Arrastrar"><i class="ti ti-grip-vertical"></i></span>' +
+    '<button class="st-chk' + (st.done ? ' done' : '') + '" onclick="toggleSt(this)"></button>' +
+    '<span class="st-txt' + (st.done ? ' done' : '') + '">' + st.text + '</span>' +
+    '<select class="st-resp" onchange="saveStResp(this)">' + respOpts + '</select>' +
+    '<button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>';
+  return item;
+}
+
+// ── Internal reorder drag (within same st-list) ──────────────────────────────
+var _stDragSrc = null;
+
+function initStDrag(list) {
+  list.querySelectorAll('.st-item').forEach(function(item) {
+    item.addEventListener('dragstart', function(e) {
+      _stDragSrc = item;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', 'st-reorder');
+    });
+    item.addEventListener('dragend', function() {
+      item.classList.remove('dragging');
+      list.querySelectorAll('.st-item').forEach(function(i) {
+        i.classList.remove('drag-over-top','drag-over-bottom');
+      });
+      _stDragSrc = null;
+    });
+    item.addEventListener('dragover', function(e) {
+      if (!_stDragSrc || _stDragSrc === item) return;
+      if (e.dataTransfer.getData && e.dataTransfer.types && e.dataTransfer.types.includes('text/plain')) {
+        var type = 'st-reorder';
+      }
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      list.querySelectorAll('.st-item').forEach(function(i) {
+        i.classList.remove('drag-over-top','drag-over-bottom');
+      });
+      var rect = item.getBoundingClientRect();
+      var mid  = rect.top + rect.height / 2;
+      item.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
+    });
+    item.addEventListener('drop', function(e) {
+      e.preventDefault();
+      if (!_stDragSrc || _stDragSrc === item) return;
+      var rect = item.getBoundingClientRect();
+      var mid  = rect.top + rect.height / 2;
+      var insertBefore = e.clientY < mid;
+      if (insertBefore) {
+        list.insertBefore(_stDragSrc, item);
+      } else {
+        list.insertBefore(_stDragSrc, item.nextSibling);
+      }
+      list.querySelectorAll('.st-item').forEach(function(i) {
+        i.classList.remove('drag-over-top','drag-over-bottom');
+      });
+      _persistStOrder();
+    });
+  });
+}
+
+// Save reordered subtasks to TASKS[] + GAS
+function _persistStOrder() {
+  if (!activeCard || !activeCard.dataset.taskId) return;
+  const task = getTask(activeCard.dataset.taskId);
+  if (!task) return;
+  const items = document.querySelectorAll('#st-list .st-item');
+  task.subtasks = Array.from(items).map(function(item) {
+    return {
+      text: item.querySelector('.st-txt').textContent,
+      done: item.querySelector('.st-chk').classList.contains('done'),
+      resp: item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : ''
+    };
+  });
+  gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) },
+    function(r) { if (r && r.ok === false) toast('⚠ Error al reordenar'); },
+    function()  { toast('⚠ Sin conexión'); }
+  );
+  renderMatrix();
+  renderKanban();
+  renderTimeline();
+  toast('✓ Subtarea reordenada');
+}
+
+// ── Cross-activity drag (drop onto card/kcard) ────────────────────────────────
+var _stDragData = null; // { taskId, stIndex, stObj }
+
+// Called on dragstart from a st-item when crossing to another activity
+function _stStartCross(item, e) {
+  if (!activeCard || !activeCard.dataset.taskId) return;
+  const task = getTask(activeCard.dataset.taskId);
+  if (!task) return;
+  const items = Array.from(document.querySelectorAll('#st-list .st-item'));
+  const idx   = items.indexOf(item);
+  if (idx === -1) return;
+  _stDragData = { fromTaskId: task.id, stIndex: idx, stObj: task.subtasks[idx] };
+  e.dataTransfer.setData('text/plain', 'st-cross');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+// Attach cross-activity drag to each st-item dragstart
+function _attachCrossDrag(list) {
+  list.querySelectorAll('.st-item').forEach(function(item) {
+    item.addEventListener('dragstart', function(e) {
+      // Wait a tick to detect if mouse leaves the drawer
+      setTimeout(function() {
+        if (_stDragData === null) _stStartCross(item, e);
+      }, 0);
+      _stStartCross(item, e);
+    });
+  });
+}
+
+// Enable cards/kcards as drop targets while a subtask is being dragged
+function _enableCardDropTargets(enable) {
+  var cards = document.querySelectorAll('.card[data-task-id],.kcard[data-task-id]');
+  cards.forEach(function(card) {
+    if (enable) {
+      card.addEventListener('dragover',  _onCardDragOver);
+      card.addEventListener('dragleave', _onCardDragLeave);
+      card.addEventListener('drop',      _onCardDrop);
+    } else {
+      card.removeEventListener('dragover',  _onCardDragOver);
+      card.removeEventListener('dragleave', _onCardDragLeave);
+      card.removeEventListener('drop',      _onCardDrop);
+    }
+  });
+}
+
+function _onCardDragOver(e) {
+  if (!_stDragData) return;
+  const destTaskId = this.dataset.taskId;
+  if (destTaskId === _stDragData.fromTaskId) return; // same activity
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  this.classList.add('st-drop-target');
+}
+
+function _onCardDragLeave() {
+  this.classList.remove('st-drop-target');
+}
+
+function _onCardDrop(e) {
+  e.preventDefault();
+  this.classList.remove('st-drop-target');
+  if (!_stDragData) return;
+  const destTaskId = this.dataset.taskId;
+  if (!destTaskId || destTaskId === _stDragData.fromTaskId) return;
+
+  const fromTask = getTask(_stDragData.fromTaskId);
+  const destTask = getTask(destTaskId);
+  if (!fromTask || !destTask) return;
+
+  const stObj = _stDragData.stObj;
+
+  // Remove from source
+  fromTask.subtasks = fromTask.subtasks.filter(function(_, i) { return i !== _stDragData.stIndex; });
+  // Append to destination
+  destTask.subtasks.push(stObj);
+
+  // Persist both
+  gasCall({ action: 'updateTask', id: fromTask.id, field: 'subtasks', value: JSON.stringify(fromTask.subtasks) }, null, null);
+  gasCall({ action: 'updateTask', id: destTask.id, field: 'subtasks', value: JSON.stringify(destTask.subtasks) }, null, null);
+
+  renderMatrix();
+  renderKanban();
+  renderTimeline();
+
+  // If drawer is open on the source task, refresh it
+  if (activeCard && activeCard.dataset.taskId === fromTask.id) {
+    const stList = document.getElementById('st-list');
+    stList.innerHTML = '';
+    fromTask.subtasks.forEach(function(s) { stList.appendChild(makeStItem(s)); });
+    initStDrag(stList);
+    _attachCrossDrag(stList);
+    updateStProgress();
+  }
+
+  _stDragData = null;
+  _enableCardDropTargets(false);
+  toast('✓ Subtarea movida a "' + (destTask.title || destTaskId) + '"');
+}
+
+// Hook dragstart/dragend on the drawer to toggle card drop targets
+function _initDrawerCrossDrag() {
+  const drawer = document.getElementById('drawer');
+  drawer.addEventListener('dragstart', function(e) {
+    if (e.target.closest('.st-item')) {
+      setTimeout(function() { _enableCardDropTargets(true); }, 50);
+    }
+  });
+  drawer.addEventListener('dragend', function(e) {
+    if (e.target.closest('.st-item')) {
+      _enableCardDropTargets(false);
+      _stDragData = null;
+      document.querySelectorAll('.card.st-drop-target,.kcard.st-drop-target').forEach(function(c) {
+        c.classList.remove('st-drop-target');
+      });
+    }
+  });
+}
 
 function updateCardResp() {
   if (!activeCard) return;
@@ -2356,8 +2568,9 @@ function saveStInline() {
   if (val) {
     const item = document.createElement('div'); item.className = 'st-item';
     const respOpts2 = '<option value="" selected>—</option>' + USERS.map(u => '<option value="' + u.initials + '">' + u.initials + '</option>').join('');
-    item.innerHTML = '<button class="st-chk" onclick="toggleSt(this)"></button><span class="st-txt">' + val + '</span><select class="st-resp" onchange="saveStResp(this)">' + respOpts2 + '</select><button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>';
-    document.getElementById('st-list').appendChild(item);
+    document.getElementById('st-list').appendChild(makeStItem({text:val, done:false, resp:''}));
+    initStDrag(document.getElementById('st-list'));
+    _attachCrossDrag(document.getElementById('st-list'));
     if (activeCard && activeCard.dataset.taskId) {
       const task = getTask(activeCard.dataset.taskId);
       if (task) {
@@ -3294,6 +3507,9 @@ document.addEventListener('DOMContentLoaded', () => {
       closeDrawer();
     }
   });
+
+  // Init cross-activity subtask drag
+  _initDrawerCrossDrag();
 
   // Set today date on proj-start default
   const ps = document.getElementById('proj-start');
