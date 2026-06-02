@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.2 — GAS v8 02/06/2026 16:13-->
+<!-- ProFlow v10.5.2 — GAS v8 02/06/2026 16:18-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3224,10 +3224,12 @@ function renderTimeline() {
   const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
   if (todayLine) {
     requestAnimationFrame(() => {
-      const bodyW = body.scrollWidth || body.offsetWidth || 1;
-      const LBL_W = 230;
-      const barAreaW = bodyW - LBL_W;
-      todayLine.style.left = (LBL_W + (todayPct / 100) * barAreaW) + 'px';
+      requestAnimationFrame(() => {
+        const bodyW = body.scrollWidth || body.offsetWidth || 1;
+        const LBL_W = 230;
+        const barAreaW = bodyW - LBL_W;
+        todayLine.style.left = (LBL_W + (todayPct / 100) * barAreaW) + 'px';
+      });
     });
   }
 
