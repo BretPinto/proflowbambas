@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 02/06/2026 15:39-->
+<!-- ProFlow v10.5.1 — GAS v8 02/06/2026 15:52-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2943,7 +2943,8 @@ function setTLView(view, btn) {
     const mi = now.getMonth();
     if (mi < TL_MONTHS.length) {
       const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
-      const scrollTo = (todayPct / 100) * wrap.scrollWidth - scroll.clientWidth / 2;
+      const LBL_W = 230; // label column width px
+      const scrollTo = LBL_W + (todayPct / 100) * (wrap.scrollWidth - LBL_W) - scroll.clientWidth / 2;
       scroll.scrollLeft = Math.max(0, scrollTo);
     }
   });
@@ -3490,7 +3491,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const mi = now.getMonth();
     if (mi < TL_MONTHS.length) {
       const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
-      const scrollTo = (todayPct / 100) * wrap.scrollWidth - scroll.clientWidth / 2;
+      const LBL_W = 230; // label column width px
+      const scrollTo = LBL_W + (todayPct / 100) * (wrap.scrollWidth - LBL_W) - scroll.clientWidth / 2;
       scroll.scrollLeft = Math.max(0, scrollTo);
     }
   });
