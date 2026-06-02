@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.1 — 2026-06-01 — GAS v8 18:54-->
+<!-- ProFlow v10.5.1 — 2026-05-28 — GAS v8 02/06/2026 15:39-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1054,6 +1054,7 @@ function loadFromGAS() {
             startdate: parseSheetDate(t.startdate),
             priority:  String(t.priority  || 'medium'),
             dep:       String(t.dep       || ''),
+            desc:      String(t.desc      || ''),
             subtasks:  subs
           });
         });
@@ -2049,6 +2050,11 @@ function openDrawer(card) {
   }
 
   document.getElementById('dr-title').textContent = title;
+  const descEl = document.getElementById('dr-desc');
+  const descVal = task ? (task.desc || '') : '';
+  descEl.textContent = descVal || 'Sin descripción — haz clic en Editar para añadir.';
+  descEl.style.color = descVal ? 'var(--text2)' : 'var(--text3)';
+  descEl.style.fontStyle = descVal ? '' : 'italic';
   const projEl = document.getElementById('dr-proj');
   projEl.textContent = (PROJ[proj] || {name:proj}).name;
   projEl.style.color = {p1:'var(--p1)',p2:'var(--p2)',p3:'var(--p3)',p4:'var(--p4)'}[proj] || 'var(--text)';
@@ -2397,6 +2403,7 @@ function onDateChange() {
 }
 
 function editTitle() {
+  // Edit title
   const el = document.getElementById('dr-title');
   el.contentEditable = 'true'; el.focus();
   const r = document.createRange(); r.selectNodeContents(el);
@@ -2405,7 +2412,6 @@ function editTitle() {
     el.contentEditable = 'false';
     const nv = el.textContent.trim();
     if (!activeCard || !nv) return;
-    // Persist to TASKS[]
     const task = getTask(activeCard.dataset.taskId);
     if (task) {
       task.title = nv;
@@ -2415,6 +2421,44 @@ function editTitle() {
     toast('✓ Título actualizado');
   };
   el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } };
+
+  // Edit description — replace static div with textarea
+  const descEl = document.getElementById('dr-desc');
+  const task = getTask(activeCard && activeCard.dataset.taskId);
+  const currentDesc = task ? (task.desc || '') : '';
+
+  const ta = document.createElement('textarea');
+  ta.value = currentDesc;
+  ta.placeholder = 'Escribe una descripción...';
+    ta.style.cssText = "width:100%;min-height:72px;padding:7px 9px;font-size:12px;color:var(--text);border:1.5px solid var(--blue);border-radius:8px;resize:vertical;outline:none;line-height:1.65;background:var(--white);box-shadow:0 0 0 3px var(--blue-light);box-sizing:border-box";
+  descEl.replaceWith(ta);
+  ta.id = 'dr-desc';
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+
+  function saveDesc() {
+    const nv = ta.value.trim();
+    const newDiv = document.createElement('div');
+    newDiv.id = 'dr-desc';
+    newDiv.style.cssText = 'font-size:12px;line-height:1.65';
+    newDiv.style.color = nv ? 'var(--text2)' : 'var(--text3)';
+    newDiv.style.fontStyle = nv ? '' : 'italic';
+    newDiv.textContent = nv || 'Sin descripción — haz clic en Editar para añadir.';
+    ta.replaceWith(newDiv);
+    if (!activeCard || !activeCard.dataset.taskId) return;
+    const t2 = getTask(activeCard.dataset.taskId);
+    if (t2) {
+      t2.desc = nv;
+      gasCall({ action: 'updateTask', id: t2.id, field: 'desc', value: nv },
+        function(r) { if (r && r.ok === false) toast('⚠ Error al guardar descripción'); },
+        function()  { toast('⚠ Sin conexión al guardar descripción'); }
+      );
+    }
+    if (nv) toast('✓ Descripción guardada');
+  }
+
+  ta.onblur = saveDesc;
+  ta.onkeydown = function(e) { if (e.key === 'Escape') { ta.value = currentDesc; ta.blur(); } };
 }
 
 function toggleMovePopover() {
@@ -3240,16 +3284,18 @@ function renderTimeline() {
     projTasks.forEach(function(task, idx) {
       const actId = 'ab-' + pid + '-' + idx;
       const pctEnd   = tlDateToPct(task.date);
-      const pctStart = task.startdate ? tlDateToPct(task.startdate) : null;
-      const left  = pctStart !== null ? Math.max(projL, pctStart) : (pctEnd !== null ? Math.max(0, pctEnd - (1/365)*100*4) : projL + 2);
-      const right = pctEnd  !== null ? pctEnd : (left + (1/365)*100*4);
+      // Only use startdate if it exists in the data (not the today() default)
+      const hasStart = task.startdate && task.startdate.trim();
+      const pctStart = hasStart ? tlDateToPct(task.startdate) : null;
+      const left  = pctStart !== null ? pctStart : (pctEnd !== null ? Math.max(0, pctEnd - (1/365)*100*4) : projL + 2);
+      const right = pctEnd  !== null ? pctEnd  : (left + (1/365)*100*4);
       const actW  = Math.max((1/365)*100*1, right - left);
       AR[actId] = { l: left, w: actW, p: pid };
 
-      const startLabel = task.startdate || pctToLabel(left);
-      const endLabel   = task.date      || pctToLabel(left + actW);
+      const startLabel = hasStart ? task.startdate : '';
+      const endLabel   = task.date || pctToLabel(left + actW);
       const barCls = task.status === 'done' ? 'bar-ok' : task.status === 'doing' ? 'bar-doing' : 'bar-sl';
-      const label  = task.status === 'done' ? '✓ ' + endLabel : (startLabel !== endLabel ? startLabel + ' — ' + endLabel : endLabel);
+      const label  = task.status === 'done' ? '✓ ' + endLabel : (startLabel && startLabel !== endLabel ? startLabel + ' — ' + endLabel : endLabel);
       const actBarStyle = tlPctToStyle(left, actW);
 
       const row = document.createElement('div');
