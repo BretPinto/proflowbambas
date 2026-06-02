@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.2 — GAS v8 02/06/2026 16:18-->
+<!-- ProFlow v10.5.2 — GAS v8 02/06/2026 16:47-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2943,10 +2943,23 @@ function setTLView(view, btn) {
     const mi = now.getMonth();
     if (mi < TL_MONTHS.length) {
       const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
-      const LBL_W = 230; // label column width px
+      const LBL_W = 230;
       const scrollTo = LBL_W + (todayPct / 100) * (wrap.scrollWidth - LBL_W) - scroll.clientWidth / 2;
       scroll.scrollLeft = Math.max(0, scrollTo);
     }
+    // Reposition today line now that wrap has correct width
+    requestAnimationFrame(() => {
+      const tl = document.getElementById('tl-today');
+      if (!tl) return;
+      const b = document.getElementById('tl-body');
+      const bW = b ? (b.scrollWidth || b.offsetWidth) : 0;
+      if (!bW) return;
+      const LBL_W = 230;
+      const now2 = new Date();
+      const mi2 = now2.getMonth();
+      const pct = TL_MONTHS[mi2].s + ((now2.getDate()-1)/TL_MONTHS[mi2].d)*(TL_MONTHS[mi2].d/365)*100;
+      tl.style.left = (LBL_W + (pct/100)*(bW - LBL_W)) + 'px';
+    });
   });
 }
 
@@ -3218,20 +3231,22 @@ function renderTimeline() {
   body.innerHTML = '';
   if (todayLine) body.appendChild(todayLine);
 
-  // Today line position — offset by 230px label column
+  // Today line position — use % relative to tl-body (which spans full WRAP_W)
+  // todayPct is already proportional to the full year bar area
+  // We store it and reposition after the DOM settles via a single rAF
   const now = new Date();
   const mi  = now.getMonth();
   const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
-  if (todayLine) {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const bodyW = body.scrollWidth || body.offsetWidth || 1;
-        const LBL_W = 230;
-        const barAreaW = bodyW - LBL_W;
-        todayLine.style.left = (LBL_W + (todayPct / 100) * barAreaW) + 'px';
-      });
-    });
+  function _setTodayLine() {
+    const tl = document.getElementById('tl-today');
+    if (!tl) return;
+    const b = document.getElementById('tl-body');
+    const bW = b ? (b.scrollWidth || b.offsetWidth) : 0;
+    if (!bW) return;
+    const LBL_W = 230;
+    tl.style.left = (LBL_W + (todayPct / 100) * (bW - LBL_W)) + 'px';
   }
+  requestAnimationFrame(_setTodayLine);
 
   const projIds = Object.keys(PROJ);
   if (projIds.length === 0) {
