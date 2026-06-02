@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.1 — GAS v8 02/06/2026 15:52-->
+<!-- ProFlow v10.5.2 — GAS v8 02/06/2026 16:13-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3218,11 +3218,18 @@ function renderTimeline() {
   body.innerHTML = '';
   if (todayLine) body.appendChild(todayLine);
 
-  // Today line position
+  // Today line position — offset by 230px label column
   const now = new Date();
   const mi  = now.getMonth();
   const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
-  if (todayLine) todayLine.style.left = todayPct + '%';
+  if (todayLine) {
+    requestAnimationFrame(() => {
+      const bodyW = body.scrollWidth || body.offsetWidth || 1;
+      const LBL_W = 230;
+      const barAreaW = bodyW - LBL_W;
+      todayLine.style.left = (LBL_W + (todayPct / 100) * barAreaW) + 'px';
+    });
+  }
 
   const projIds = Object.keys(PROJ);
   if (projIds.length === 0) {
