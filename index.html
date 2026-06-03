@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.2 — GAS v8 02/06/2026 16:47-->
+<!-- ProFlow v10.5.2 — GAS v8 02/06/2026 11:59-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3390,6 +3390,20 @@ function renderTimeline() {
   });
 
   reapplyFiltersIfActive();
+
+  // Position today line after body is fully populated
+  (function positionTodayLine() {
+    const tl = document.getElementById('tl-today');
+    if (!tl) return;
+    const b = document.getElementById('tl-body');
+    const bW = b ? b.scrollWidth : 0;
+    if (bW > 300) {
+      const LBL_W = 230;
+      tl.style.left = (LBL_W + (todayPct / 100) * (bW - LBL_W)) + 'px';
+    } else {
+      requestAnimationFrame(positionTodayLine);
+    }
+  })();
 }
 
 // Keep initTLBars as alias for backward compat
