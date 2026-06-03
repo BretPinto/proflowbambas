@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.2 — GAS v8 03/06/2026 15:57-->
+<!-- ProFlow v10.5.2 — GAS v8 03/06/2026 13:16-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -227,7 +227,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .drag-tip.show{opacity:1}
 
 /* ─── DRAWER ───────────────────────────────────────────────────────────────── */
-.drawer{position:absolute;right:0;top:0;bottom:0;width:320px;background:var(--white);border-left:1px solid var(--border);z-index:20;display:none;flex-direction:column;overflow:hidden;box-shadow:-6px 0 20px rgba(0,0,0,.07)}
+.drawer{position:absolute;right:0;top:0;bottom:0;width:400px;background:var(--white);border-left:1px solid var(--border);z-index:20;display:none;flex-direction:column;overflow:hidden;box-shadow:-6px 0 20px rgba(0,0,0,.07)}
 .drawer.open{display:flex}
 .dr-top{padding:13px 15px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:8px}
 .dr-title{font-size:14px;font-weight:600;flex:1;line-height:1.4;letter-spacing:-.2px}
@@ -263,6 +263,14 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .st-item:hover .st-del{opacity:1}
 .st-del:hover{color:var(--red)}
 .st-drag-handle{font-size:14px;color:var(--border2);cursor:grab;opacity:0;transition:opacity .15s;flex-shrink:0;line-height:1;padding:0 2px;user-select:none}
+.st-row1{display:flex;align-items:center;gap:4px;width:100%}
+.st-row2{display:flex;align-items:center;gap:3px;padding:3px 0 4px 22px;flex-wrap:nowrap}
+.st-date-lbl{font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0}
+.st-date-input{font-size:10px;padding:2px 4px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);width:110px;flex-shrink:0;outline:none}
+.st-date-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-light)}
+.st-pencil{font-size:12px;color:var(--border2);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;flex-shrink:0;padding:0 2px}
+.st-item:hover .st-pencil{opacity:1}
+.st-pencil:hover{color:var(--blue)}
 .st-item:hover .st-drag-handle{opacity:1}
 .st-item.dragging{opacity:.4;background:var(--bg2);border-radius:6px}
 .st-item.drag-over-top{border-top:2px solid var(--blue)}
@@ -2029,6 +2037,17 @@ function saveKAdd(fid) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // DRAWER
 // ═══════════════════════════════════════════════════════════════════════════════
+// Static date helper used by makeStItem
+openDrawer.__dateStrToISO = function(str) {
+  if (!str) return '';
+  const mns = {Ene:1,Feb:2,Mar:3,Abr:4,May:5,Jun:6,Jul:7,Ago:8,Sep:9,Oct:10,Nov:11,Dic:12};
+  const parts = str.trim().split(' ');
+  if (parts.length < 2) return '';
+  const day = parts[0].padStart(2,'0');
+  const mon = String(mns[parts[1]] || 0).padStart(2,'0');
+  return mon ? '2026-' + mon + '-' + day : '';
+};
+
 function openDrawer(card) {
   activeCard = card;
   const taskId = card.dataset.taskId;
@@ -2119,11 +2138,65 @@ function openDrawer(card) {
 
 function closeDrawer() { document.getElementById('drawer').classList.remove('open'); }
 
+function saveStDuedate(input) {
+  if (!activeCard || !activeCard.dataset.taskId) return;
+  const task = getTask(activeCard.dataset.taskId);
+  if (!task) return;
+  const items = Array.from(document.querySelectorAll('#st-list .st-item'));
+  const idx = items.indexOf(input.closest('.st-item'));
+  if (idx === -1 || !task.subtasks[idx]) return;
+  const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  function isoToShort(iso) {
+    if (!iso) return '';
+    const p = iso.split('-'); if (p.length < 3) return '';
+    return parseInt(p[2],10) + ' ' + mns[parseInt(p[1],10)-1];
+  }
+  task.subtasks[idx].duedate = isoToShort(input.value);
+  gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) }, null, null);
+  toast('✓ Fecha de tarea guardada');
+}
+
+function editStName(btn) {
+  const item  = btn.closest('.st-item');
+  const txtEl = item.querySelector('.st-txt');
+  const prev  = txtEl.textContent;
+  // Replace span with input
+  const inp = document.createElement('input');
+  inp.type  = 'text';
+  inp.value = prev;
+  inp.style.cssText = 'flex:1;font-size:12px;padding:1px 5px;border:1.5px solid var(--blue);border-radius:5px;outline:none;background:var(--white);color:var(--text);min-width:0';
+  txtEl.replaceWith(inp);
+  inp.className = 'st-txt';
+  inp.focus(); inp.select();
+  function save() {
+    const nv = inp.value.trim() || prev;
+    const span = document.createElement('span');
+    span.className = 'st-txt' + (item.querySelector('.st-chk').classList.contains('done') ? ' done' : '');
+    span.textContent = nv;
+    inp.replaceWith(span);
+    if (!activeCard || !activeCard.dataset.taskId) return;
+    const task = getTask(activeCard.dataset.taskId);
+    if (!task) return;
+    const items = Array.from(document.querySelectorAll('#st-list .st-item'));
+    const idx = items.indexOf(item);
+    if (idx > -1 && task.subtasks[idx]) {
+      task.subtasks[idx].text = nv;
+      gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) }, null, null);
+      if (nv !== prev) toast('✓ Nombre de tarea actualizado');
+    }
+  }
+  inp.onblur = save;
+  inp.onkeydown = function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    if (e.key === 'Escape') { inp.value = prev; inp.blur(); }
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // SUBTASK DRAG — reorder within activity + move between activities
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Build a single st-item element (with drag handle)
+// Build a single st-item element (with drag handle, duedate, realdate, pencil edit)
 function makeStItem(st) {
   const item = document.createElement('div');
   item.className = 'st-item';
@@ -2131,12 +2204,32 @@ function makeStItem(st) {
   const respOpts = '<option value="">—</option>' + USERS.map(function(u) {
     return '<option value="' + u.initials + '"' + (st.resp === u.initials ? ' selected' : '') + '>' + u.initials + '</option>';
   }).join('');
+
+  // Get activity max date for duedate constraint
+  const actTask = (activeCard && activeCard.dataset.taskId) ? getTask(activeCard.dataset.taskId) : null;
+  const maxDate = actTask && actTask.date ? openDrawer.__dateStrToISO(actTask.date) : '';
+
+  // Convert stored short dates to ISO for input values
+  const dueDateISO  = st.duedate  ? openDrawer.__dateStrToISO(st.duedate)  : '';
+  const realDateISO = st.realdate ? openDrawer.__dateStrToISO(st.realdate) : '';
+
   item.innerHTML =
-    '<span class="st-drag-handle" title="Arrastrar"><i class="ti ti-grip-vertical"></i></span>' +
-    '<button class="st-chk' + (st.done ? ' done' : '') + '" onclick="toggleSt(this)"></button>' +
-    '<span class="st-txt' + (st.done ? ' done' : '') + '">' + st.text + '</span>' +
-    '<select class="st-resp" onchange="saveStResp(this)">' + respOpts + '</select>' +
-    '<button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>';
+    // Row 1: drag | check | text | pencil | resp | del
+    '<div class="st-row1">' +
+      '<span class="st-drag-handle" title="Arrastrar"><i class="ti ti-grip-vertical"></i></span>' +
+      '<button class="st-chk' + (st.done ? ' done' : '') + '" onclick="toggleSt(this)"></button>' +
+      '<span class="st-txt' + (st.done ? ' done' : '') + '">' + st.text + '</span>' +
+      '<button class="st-pencil" title="Editar nombre" onclick="editStName(this)"><i class="ti ti-pencil"></i></button>' +
+      '<select class="st-resp" onchange="saveStResp(this)">' + respOpts + '</select>' +
+      '<button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>' +
+    '</div>' +
+    // Row 2: duedate + realdate
+    '<div class="st-row2">' +
+      '<span class="st-date-lbl"><i class="ti ti-calendar-due" style="font-size:10px"></i> Vence</span>' +
+      '<input type="date" class="st-date-input" ' + (maxDate ? 'max="' + maxDate + '"' : '') + ' value="' + dueDateISO + '" onchange="saveStDuedate(this)">' +
+      '<span class="st-date-lbl" style="margin-left:8px"><i class="ti ti-calendar-check" style="font-size:10px"></i> Real</span>' +
+      '<input type="date" class="st-date-input" value="' + realDateISO + '" disabled style="opacity:.65;cursor:not-allowed">' +
+    '</div>';
   return item;
 }
 
@@ -2198,10 +2291,20 @@ function _persistStOrder() {
   if (!task) return;
   const items = document.querySelectorAll('#st-list .st-item');
   task.subtasks = Array.from(items).map(function(item) {
+    const dd = item.querySelector('.st-date-input');
+    const rd = item.querySelectorAll('.st-date-input')[1];
+    const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    function isoToShort(iso) {
+      if (!iso) return '';
+      const p = iso.split('-'); if (p.length < 3) return '';
+      return parseInt(p[2],10) + ' ' + mns[parseInt(p[1],10)-1];
+    }
     return {
-      text: item.querySelector('.st-txt').textContent,
-      done: item.querySelector('.st-chk').classList.contains('done'),
-      resp: item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : ''
+      text:     item.querySelector('.st-txt').textContent,
+      done:     item.querySelector('.st-chk').classList.contains('done'),
+      resp:     item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : '',
+      duedate:  dd ? isoToShort(dd.value) : '',
+      realdate: rd ? isoToShort(rd.value) : ''
     };
   });
   gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) },
@@ -2540,11 +2643,31 @@ function toggleSt(btn) {
   if (activeCard && activeCard.dataset.taskId) {
     const task = getTask(activeCard.dataset.taskId);
     if (task) {
-      task.subtasks = Array.from(document.querySelectorAll('#st-list .st-item')).map(item => ({
-        text: item.querySelector('.st-txt').textContent,
-        done: item.querySelector('.st-chk').classList.contains('done'),
-        resp: item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : ''
-      }));
+      const mns2 = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      function _isoToShort(iso) {
+        if (!iso) return '';
+        const p = iso.split('-'); if (p.length < 3) return '';
+        return parseInt(p[2],10) + ' ' + mns2[parseInt(p[1],10)-1];
+      }
+      const nowD = new Date();
+      const todayShort = nowD.getDate() + ' ' + mns2[nowD.getMonth()];
+      task.subtasks = Array.from(document.querySelectorAll('#st-list .st-item')).map(function(item) {
+        const isDone   = item.querySelector('.st-chk').classList.contains('done');
+        const ddInputs = item.querySelectorAll('.st-date-input');
+        const prevReal = ddInputs[1] ? ddInputs[1].value : '';
+        // Auto set/clear realdate for this individual task
+        let newReal = '';
+        if (isDone) { newReal = prevReal ? _isoToShort(prevReal) : todayShort; }
+        // Update the disabled input display
+        if (ddInputs[1]) ddInputs[1].value = newReal ? openDrawer.__dateStrToISO(newReal) : '';
+        return {
+          text:     item.querySelector('.st-txt').textContent,
+          done:     isDone,
+          resp:     item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : '',
+          duedate:  ddInputs[0] ? _isoToShort(ddInputs[0].value) : '',
+          realdate: newReal
+        };
+      });
       // Persist subtasks to GAS
       gasCall({ action: 'updateTask', id: activeCard.dataset.taskId, field: 'subtasks', value: JSON.stringify(task.subtasks) },
         function(r) { if (r && r.ok === false) toast('⚠ Error GAS: ' + (r.error||'subtareas')); },
