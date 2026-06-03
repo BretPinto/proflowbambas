@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.2 — GAS v8 03/06/2026 12:19-->
+<!-- ProFlow v10.5.2 — GAS v8 03/06/2026 12:50-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2088,13 +2088,9 @@ function openDrawer(card) {
   const rdEl  = document.getElementById('dr-realdate');
   if (rdRow && rdEl) {
     const rd = task ? (task.realdate || '') : '';
-    if (rd) {
-      rdEl.textContent = rd;
-      rdRow.style.display = '';
-    } else {
-      rdEl.textContent = '';
-      rdRow.style.display = 'none';
-    }
+    rdRow.style.display = '';
+    rdEl.textContent = rd || '—';
+    rdEl.style.color = rd ? 'var(--green)' : 'var(--text3)';
   }
 
   const depSel = document.getElementById('dr-dep');
@@ -2569,8 +2565,9 @@ function toggleSt(btn) {
         const rdRow = document.getElementById('dr-realdate-row');
         const rdEl  = document.getElementById('dr-realdate');
         if (rdRow && rdEl) {
-          if (newRealdate) { rdEl.textContent = newRealdate; rdRow.style.display = ''; }
-          else             { rdEl.textContent = ''; rdRow.style.display = 'none'; }
+          rdRow.style.display = '';
+          rdEl.textContent = newRealdate || '—';
+          rdEl.style.color = newRealdate ? 'var(--green)' : 'var(--text3)';
         }
       }
 
