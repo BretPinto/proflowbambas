@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.2 — GAS v8 03/06/2026 12:06-->
+<!-- ProFlow v10.5.2 — GAS v8 03/06/2026 12:19-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -677,6 +677,9 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
       <div class="dr-row"><i class="ti ti-calendar-due"></i><span>Vencimiento</span>
         <input type="date" class="dr-date" id="dr-end" onchange="onDateChange()">
       </div>
+      <div class="dr-row" id="dr-realdate-row" style="display:none"><i class="ti ti-calendar-check"></i><span>Cumplimiento real</span>
+        <span id="dr-realdate" style="font-size:13px;color:var(--green);font-weight:600"></span>
+      </div>
       <div class="dr-row"><i class="ti ti-git-branch"></i><span>Depende de</span>
         <select class="dr-sel" id="dr-dep" onchange="updateCardDep()">
           <option value="">— ninguna —</option>
@@ -1055,6 +1058,7 @@ function loadFromGAS() {
             priority:  String(t.priority  || 'medium'),
             dep:       String(t.dep       || ''),
             desc:      String(t.desc      || ''),
+            realdate:  String(t.realdate  || ''),
             subtasks:  subs
           });
         });
@@ -2079,6 +2083,20 @@ function openDrawer(card) {
   const endISO = task && task.date ? dateStrToISO(task.date) : (card.dataset.endDate || '');
   document.getElementById('dr-end').value = endISO;
 
+  // Populate realdate (read-only)
+  const rdRow = document.getElementById('dr-realdate-row');
+  const rdEl  = document.getElementById('dr-realdate');
+  if (rdRow && rdEl) {
+    const rd = task ? (task.realdate || '') : '';
+    if (rd) {
+      rdEl.textContent = rd;
+      rdRow.style.display = '';
+    } else {
+      rdEl.textContent = '';
+      rdRow.style.display = 'none';
+    }
+  }
+
   const depSel = document.getElementById('dr-dep');
   depSel.innerHTML = '<option value="">— ninguna —</option>';
   (PROJ_TASKS[proj] || []).filter(t => t !== title).forEach(t => {
@@ -2537,6 +2555,25 @@ function toggleSt(btn) {
         function(r) { if (r && r.ok === false) toast('⚠ Error GAS: ' + (r.error||'subtareas')); },
         function()  { toast('⚠ Sin conexión al guardar subtarea'); }
       );
+
+      // Auto realdate: all done → set today; any undone → clear
+      const allDone = task.subtasks.length > 0 && task.subtasks.every(function(s) { return s.done; });
+      const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      const d = new Date();
+      const todayLabel = d.getDate() + ' ' + mns[d.getMonth()];
+      const newRealdate = allDone ? todayLabel : '';
+      if (task.realdate !== newRealdate) {
+        task.realdate = newRealdate;
+        gasCall({ action: 'updateTask', id: task.id, field: 'realdate', value: newRealdate }, null, null);
+        // Update drawer realdate display
+        const rdRow = document.getElementById('dr-realdate-row');
+        const rdEl  = document.getElementById('dr-realdate');
+        if (rdRow && rdEl) {
+          if (newRealdate) { rdEl.textContent = newRealdate; rdRow.style.display = ''; }
+          else             { rdEl.textContent = ''; rdRow.style.display = 'none'; }
+        }
+      }
+
       // Re-render cards so progress bars update immediately in both views
       renderMatrix();
       renderKanban();
