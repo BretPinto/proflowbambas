@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.2 — GAS v8 03/06/2026 12:50-->
+<!-- ProFlow v10.5.2 — GAS v8 03/06/2026 15:57-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -677,8 +677,8 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
       <div class="dr-row"><i class="ti ti-calendar-due"></i><span>Vencimiento</span>
         <input type="date" class="dr-date" id="dr-end" onchange="onDateChange()">
       </div>
-      <div class="dr-row" id="dr-realdate-row" style="display:none"><i class="ti ti-calendar-check"></i><span>Cumplimiento real</span>
-        <span id="dr-realdate" style="font-size:13px;color:var(--green);font-weight:600"></span>
+      <div class="dr-row"><i class="ti ti-calendar-check"></i><span>Cumplimiento real</span>
+        <input type="date" class="dr-date" id="dr-realdate" disabled style="opacity:.7;cursor:not-allowed">
       </div>
       <div class="dr-row"><i class="ti ti-git-branch"></i><span>Depende de</span>
         <select class="dr-sel" id="dr-dep" onchange="updateCardDep()">
@@ -2086,11 +2086,10 @@ function openDrawer(card) {
   // Populate realdate (read-only)
   const rdRow = document.getElementById('dr-realdate-row');
   const rdEl  = document.getElementById('dr-realdate');
-  if (rdRow && rdEl) {
+  const rdInput = document.getElementById('dr-realdate');
+  if (rdInput) {
     const rd = task ? (task.realdate || '') : '';
-    rdRow.style.display = '';
-    rdEl.textContent = rd || '—';
-    rdEl.style.color = rd ? 'var(--green)' : 'var(--text3)';
+    rdInput.value = rd ? dateStrToISO(rd) : '';
   }
 
   const depSel = document.getElementById('dr-dep');
@@ -2564,10 +2563,9 @@ function toggleSt(btn) {
         // Update drawer realdate display
         const rdRow = document.getElementById('dr-realdate-row');
         const rdEl  = document.getElementById('dr-realdate');
-        if (rdRow && rdEl) {
-          rdRow.style.display = '';
-          rdEl.textContent = newRealdate || '—';
-          rdEl.style.color = newRealdate ? 'var(--green)' : 'var(--text3)';
+        const rdInput = document.getElementById('dr-realdate');
+        if (rdInput) {
+          rdInput.value = newRealdate ? dateStrToISO(newRealdate) : '';
         }
       }
 
