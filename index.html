@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.2 — GAS v8 03/06/2026 13:16-->
+<!-- ProFlow v10.5.2 — GAS v8 04/06/2026 10:44-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -264,10 +264,12 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .st-del:hover{color:var(--red)}
 .st-drag-handle{font-size:14px;color:var(--border2);cursor:grab;opacity:0;transition:opacity .15s;flex-shrink:0;line-height:1;padding:0 2px;user-select:none}
 .st-row1{display:flex;align-items:center;gap:4px;width:100%}
-.st-row2{display:flex;align-items:center;gap:3px;padding:3px 0 4px 22px;flex-wrap:nowrap}
+.st-row2{display:flex;align-items:center;gap:6px;padding:2px 0 5px 22px;flex-wrap:nowrap}
 .st-date-lbl{font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0}
-.st-date-input{font-size:10px;padding:2px 4px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);width:110px;flex-shrink:0;outline:none}
+.st-date-input{font-size:11px;padding:2px 4px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);width:100px;flex-shrink:0;outline:none}
 .st-date-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-light)}
+.st-real-label{font-size:11px;color:var(--green);font-weight:600;white-space:nowrap}
+.st-real-label.empty{color:var(--text3);font-weight:400}
 .st-pencil{font-size:12px;color:var(--border2);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;flex-shrink:0;padding:0 2px}
 .st-item:hover .st-pencil{opacity:1}
 .st-pencil:hover{color:var(--blue)}
@@ -2223,12 +2225,12 @@ function makeStItem(st) {
       '<select class="st-resp" onchange="saveStResp(this)">' + respOpts + '</select>' +
       '<button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>' +
     '</div>' +
-    // Row 2: duedate + realdate
+    // Row 2: duedate + realdate label
     '<div class="st-row2">' +
-      '<span class="st-date-lbl"><i class="ti ti-calendar-due" style="font-size:10px"></i> Vence</span>' +
+      '<span class="st-date-lbl"><i class="ti ti-calendar-due" style="font-size:10px"></i> Vence:</span>' +
       '<input type="date" class="st-date-input" ' + (maxDate ? 'max="' + maxDate + '"' : '') + ' value="' + dueDateISO + '" onchange="saveStDuedate(this)">' +
-      '<span class="st-date-lbl" style="margin-left:8px"><i class="ti ti-calendar-check" style="font-size:10px"></i> Real</span>' +
-      '<input type="date" class="st-date-input" value="' + realDateISO + '" disabled style="opacity:.65;cursor:not-allowed">' +
+      '<span class="st-date-lbl" style="margin-left:10px"><i class="ti ti-calendar-check" style="font-size:10px"></i> Real:</span>' +
+      '<span class="st-real-label' + (st.realdate ? '' : ' empty') + '">' + (st.realdate || '—') + '</span>' +
     '</div>';
   return item;
 }
@@ -2291,20 +2293,22 @@ function _persistStOrder() {
   if (!task) return;
   const items = document.querySelectorAll('#st-list .st-item');
   task.subtasks = Array.from(items).map(function(item) {
-    const dd = item.querySelector('.st-date-input');
-    const rd = item.querySelectorAll('.st-date-input')[1];
+    const dd  = item.querySelector('.st-date-input');
     const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     function isoToShort(iso) {
       if (!iso) return '';
       const p = iso.split('-'); if (p.length < 3) return '';
       return parseInt(p[2],10) + ' ' + mns[parseInt(p[1],10)-1];
     }
+    const rdLbl = item.querySelector('.st-real-label');
+    const rdVal = rdLbl && !rdLbl.classList.contains('empty') ? rdLbl.textContent.trim() : '';
+    const txtEl = item.querySelector('.st-txt');
     return {
-      text:     item.querySelector('.st-txt').textContent,
+      text:     txtEl ? txtEl.textContent : '',
       done:     item.querySelector('.st-chk').classList.contains('done'),
       resp:     item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : '',
       duedate:  dd ? isoToShort(dd.value) : '',
-      realdate: rd ? isoToShort(rd.value) : ''
+      realdate: rdVal === '—' ? '' : rdVal
     };
   });
   gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) },
@@ -2658,10 +2662,14 @@ function toggleSt(btn) {
         // Auto set/clear realdate for this individual task
         let newReal = '';
         if (isDone) { newReal = prevReal ? _isoToShort(prevReal) : todayShort; }
-        // Update the disabled input display
-        if (ddInputs[1]) ddInputs[1].value = newReal ? openDrawer.__dateStrToISO(newReal) : '';
+        // Update the real label display
+        const realLbl = item.querySelector('.st-real-label');
+        if (realLbl) {
+          realLbl.textContent = newReal || '—';
+          realLbl.className = 'st-real-label' + (newReal ? '' : ' empty');
+        }
         return {
-          text:     item.querySelector('.st-txt').textContent,
+          text:     item.querySelector('.st-txt').textContent || item.querySelector('input.st-txt') && item.querySelector('input.st-txt').value || '',
           done:     isDone,
           resp:     item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : '',
           duedate:  ddInputs[0] ? _isoToShort(ddInputs[0].value) : '',
