@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.2 — GAS v8 04/06/2026 12:14-->
+<!-- ProFlow v10.5.5 — GAS v8 04/06/2026 12:20-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -393,6 +393,9 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="tb-title" id="tb-title">Vista general — todos los proyectos</div>
+    <button id="refresh-btn" class="btn" onclick="manualRefresh()" title="Actualizar datos" style="flex-shrink:0">
+      <i class="ti ti-refresh" id="refresh-icon"></i>
+    </button>
     <div class="vtabs">
       <button class="vtab active" id="vt-matrix" onclick="switchView('matrix',null,this)"><i class="ti ti-layout-grid"></i>Matriz</button>
       <button class="vtab" id="vt-kanban" onclick="switchView('kanban',null,this)"><i class="ti ti-layout-columns"></i>Kanban</button>
@@ -3670,6 +3673,89 @@ function changeMyPassword() {
   }, function(err) { toast('⚠ Error: ' + err); });
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// REFRESH — manual + auto-poll every 30s
+// ═══════════════════════════════════════════════════════════════════════════════
+var _lastVersion = '';
+var _pollTimer   = null;
+
+function _setRefreshSpinner(on) {
+  var icon = document.getElementById('refresh-icon');
+  if (!icon) return;
+  icon.style.animation = on ? 'spin 1s linear infinite' : '';
+}
+
+function _applyGASData(data) {
+  if (data.users && data.users.length) {
+    USERS.length = 0;
+    data.users.forEach(function(u) { USERS.push(u); });
+  }
+  if (data.projects && data.projects.length) {
+    Object.keys(PROJ).forEach(function(k) { delete PROJ[k]; });
+    var colors  = ['var(--p1)','var(--p2)','var(--p3)','var(--p4)'];
+    var classes = ['kp1','kp2','kp3','kp4'];
+    data.projects.forEach(function(p, i) {
+      var startISO = normalizeISODate(p.start);
+      var endISO   = normalizeISODate(p.end);
+      PROJ[p.id] = { name:String(p.name||''), col:p.color||colors[i%4], cls:classes[i%4],
+        start:startISO, end:endISO, startISO:startISO, endISO:endISO, members:String(p.members||'') };
+      PROJ_META[p.id] = { start:startISO, end:endISO, members:String(p.members||'').split(',').filter(Boolean) };
+      if (!PROJ_TASKS[p.id]) PROJ_TASKS[p.id] = [];
+    });
+  }
+  if (data.tasks && data.tasks.length) {
+    TASKS.length = 0;
+    data.tasks.forEach(function(t) {
+      var subs = [];
+      try { var raw = String(t.subtasks||'[]').trim(); if (raw.startsWith('[')) subs = JSON.parse(raw); } catch(e) { subs = []; }
+      TASKS.push({ id:String(t.id), proj:String(t.proj), title:String(t.title),
+        status:String(t.status||'todo'), resp:String(t.resp||''),
+        date:parseSheetDate(t.date), startdate:parseSheetDate(t.startdate),
+        priority:String(t.priority||'medium'), dep:String(t.dep||''),
+        desc:String(t.desc||''), realdate:String(t.realdate||''), subtasks:subs });
+    });
+  }
+  rebuildProjTasks();
+  renderMatrix(); renderKanban(); renderTimeline(); populateUserSelects();
+}
+
+function manualRefresh() {
+  if (document.getElementById('drawer').classList.contains('open')) closeDrawer();
+  _setRefreshSpinner(true);
+  gasCall({ action: 'getData' }, function(data) {
+    _setRefreshSpinner(false);
+    if (data && data.ok !== false) {
+      _applyGASData(data);
+      toast('✓ Datos actualizados');
+    } else {
+      toast('⚠ Error al actualizar');
+    }
+  }, function() {
+    _setRefreshSpinner(false);
+    toast('⚠ Sin conexión');
+  });
+}
+
+function _startAutoPoll() {
+  _pollTimer = setInterval(function() {
+    if (document.getElementById('drawer').classList.contains('open')) return;
+    gasCall({ action: 'getVersion' }, function(data) {
+      if (!data || !data.ok) return;
+      var v = data.version || '';
+      if (_lastVersion && v && v !== _lastVersion) {
+        closeDrawer();
+        gasCall({ action: 'getData' }, function(data2) {
+          if (data2 && data2.ok !== false) {
+            _applyGASData(data2);
+            toast('↻ Datos sincronizados');
+          }
+        }, null);
+      }
+      _lastVersion = v;
+    }, null);
+  }, 30000);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Check existing session
   const saved = sessionLoad();
@@ -3762,6 +3848,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Set today date on proj-start default
   const ps = document.getElementById('proj-start');
   if (ps && !ps.value) { const d = new Date(); ps.value = d.toISOString().split('T')[0]; }
+
+  // Start auto-poll + seed version baseline
+  _startAutoPoll();
+  gasCall({ action: 'getVersion' }, function(d) { if (d && d.version) _lastVersion = d.version; }, null);
 });
 </script>
 </body>
