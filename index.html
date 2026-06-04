@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.2 — GAS v8 04/06/2026 10:44-->
+<!-- ProFlow v10.5.2 — GAS v8 04/06/2026 11:00-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -251,24 +251,24 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .pill-lo{background:var(--green-bg);color:var(--green)}
 .st-prog-wrap{height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;margin-bottom:8px}
 .st-prog-bar{height:100%;border-radius:3px;background:var(--green);transition:width .3s}
-.st-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--bg2)}
+.st-item{display:flex;flex-direction:column;padding:5px 0;border-bottom:1px solid var(--bg2)}
 .st-item:last-child{border-bottom:none}
 .st-chk{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;background:none}
 .st-chk.done{background:var(--green);border-color:var(--green)}
 .st-chk.done::after{content:'✓';font-size:9px;color:#fff;font-weight:700}
-.st-txt{font-size:12px;flex:1}
+.st-txt{font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .st-txt.done{text-decoration:line-through;color:var(--text3)}
-.st-resp{font-size:10px;border:1px solid var(--border2);border-radius:12px;padding:2px 5px;font-family:'DM Sans',sans-serif;color:var(--text2);background:var(--white);outline:none;cursor:pointer;flex-shrink:0;max-width:60px}
+.st-resp{font-size:10px;border:1px solid var(--border2);border-radius:12px;padding:2px 5px;font-family:'DM Sans',sans-serif;color:var(--text2);background:var(--white);outline:none;cursor:pointer;flex-shrink:0;max-width:55px}
 .st-del{font-size:13px;color:var(--border2);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;flex-shrink:0}
 .st-item:hover .st-del{opacity:1}
 .st-del:hover{color:var(--red)}
 .st-drag-handle{font-size:14px;color:var(--border2);cursor:grab;opacity:0;transition:opacity .15s;flex-shrink:0;line-height:1;padding:0 2px;user-select:none}
-.st-row1{display:flex;align-items:center;gap:4px;width:100%}
-.st-row2{display:flex;align-items:center;gap:6px;padding:2px 0 5px 22px;flex-wrap:nowrap}
+.st-row1{display:flex;align-items:center;gap:4px;width:100%;min-width:0}
+.st-row2{display:flex;align-items:center;gap:4px;padding:3px 0 2px 22px;flex-wrap:nowrap;min-width:0;overflow:hidden}
 .st-date-lbl{font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0}
-.st-date-input{font-size:11px;padding:2px 4px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);width:100px;flex-shrink:0;outline:none}
+.st-date-input{font-size:10px;padding:1px 3px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);width:88px;flex-shrink:0;outline:none}
 .st-date-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-light)}
-.st-real-label{font-size:11px;color:var(--green);font-weight:600;white-space:nowrap}
+.st-real-label{font-size:10px;color:var(--green);font-weight:600;white-space:nowrap;flex-shrink:0}
 .st-real-label.empty{color:var(--text3);font-weight:400}
 .st-pencil{font-size:12px;color:var(--border2);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;flex-shrink:0;padding:0 2px}
 .st-item:hover .st-pencil{opacity:1}
