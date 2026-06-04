@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.2 — GAS v8 04/06/2026 11:00-->
+<!-- ProFlow v10.5.4 — GAS v8 04/06/2026 11:52-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -227,7 +227,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .drag-tip.show{opacity:1}
 
 /* ─── DRAWER ───────────────────────────────────────────────────────────────── */
-.drawer{position:absolute;right:0;top:0;bottom:0;width:400px;background:var(--white);border-left:1px solid var(--border);z-index:20;display:none;flex-direction:column;overflow:hidden;box-shadow:-6px 0 20px rgba(0,0,0,.07)}
+.drawer{position:absolute;right:0;top:0;bottom:0;width:320px;background:var(--white);border-left:1px solid var(--border);z-index:20;display:none;flex-direction:column;overflow:hidden;box-shadow:-6px 0 20px rgba(0,0,0,.07)}
 .drawer.open{display:flex}
 .dr-top{padding:13px 15px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:8px}
 .dr-title{font-size:14px;font-weight:600;flex:1;line-height:1.4;letter-spacing:-.2px}
@@ -251,33 +251,17 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .pill-lo{background:var(--green-bg);color:var(--green)}
 .st-prog-wrap{height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;margin-bottom:8px}
 .st-prog-bar{height:100%;border-radius:3px;background:var(--green);transition:width .3s}
-.st-item{display:flex;flex-direction:column;padding:5px 0;border-bottom:1px solid var(--bg2)}
+.st-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--bg2)}
 .st-item:last-child{border-bottom:none}
 .st-chk{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;background:none}
 .st-chk.done{background:var(--green);border-color:var(--green)}
 .st-chk.done::after{content:'✓';font-size:9px;color:#fff;font-weight:700}
-.st-txt{font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st-txt{font-size:12px;flex:1}
 .st-txt.done{text-decoration:line-through;color:var(--text3)}
-.st-resp{font-size:10px;border:1px solid var(--border2);border-radius:12px;padding:2px 5px;font-family:'DM Sans',sans-serif;color:var(--text2);background:var(--white);outline:none;cursor:pointer;flex-shrink:0;max-width:55px}
+.st-resp{font-size:10px;border:1px solid var(--border2);border-radius:12px;padding:2px 5px;font-family:'DM Sans',sans-serif;color:var(--text2);background:var(--white);outline:none;cursor:pointer;flex-shrink:0;max-width:60px}
 .st-del{font-size:13px;color:var(--border2);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;flex-shrink:0}
 .st-item:hover .st-del{opacity:1}
 .st-del:hover{color:var(--red)}
-.st-drag-handle{font-size:14px;color:var(--border2);cursor:grab;opacity:0;transition:opacity .15s;flex-shrink:0;line-height:1;padding:0 2px;user-select:none}
-.st-row1{display:flex;align-items:center;gap:4px;width:100%;min-width:0}
-.st-row2{display:flex;align-items:center;gap:4px;padding:3px 0 2px 22px;flex-wrap:nowrap;min-width:0;overflow:hidden}
-.st-date-lbl{font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0}
-.st-date-input{font-size:10px;padding:1px 3px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);width:88px;flex-shrink:0;outline:none}
-.st-date-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-light)}
-.st-real-label{font-size:10px;color:var(--green);font-weight:600;white-space:nowrap;flex-shrink:0}
-.st-real-label.empty{color:var(--text3);font-weight:400}
-.st-pencil{font-size:12px;color:var(--border2);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;flex-shrink:0;padding:0 2px}
-.st-item:hover .st-pencil{opacity:1}
-.st-pencil:hover{color:var(--blue)}
-.st-item:hover .st-drag-handle{opacity:1}
-.st-item.dragging{opacity:.4;background:var(--bg2);border-radius:6px}
-.st-item.drag-over-top{border-top:2px solid var(--blue)}
-.st-item.drag-over-bottom{border-bottom:2px solid var(--blue)}
-.card.st-drop-target,.kcard.st-drop-target{box-shadow:0 0 0 2px var(--blue),0 4px 16px rgba(0,0,0,.10)!important;background:var(--blue-bg)!important;transform:translateY(-1px)}
 .dr-actions{display:flex;gap:6px}
 .dr-del-btn{padding:6px 10px;font-size:12px;border:1px solid #FCA5A5;border-radius:8px;cursor:pointer;background:var(--white);color:var(--red);display:flex;align-items:center;gap:4px;font-weight:500;transition:all .15s}
 .dr-del-btn:hover{background:var(--red-bg)}
@@ -393,6 +377,9 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="tb-title" id="tb-title">Vista general — todos los proyectos</div>
+    <button id="refresh-btn" class="btn" onclick="manualRefresh()" title="Actualizar datos" style="flex-shrink:0">
+      <i class="ti ti-refresh" id="refresh-icon"></i>
+    </button>
     <div class="vtabs">
       <button class="vtab active" id="vt-matrix" onclick="switchView('matrix',null,this)"><i class="ti ti-layout-grid"></i>Matriz</button>
       <button class="vtab" id="vt-kanban" onclick="switchView('kanban',null,this)"><i class="ti ti-layout-columns"></i>Kanban</button>
@@ -681,14 +668,8 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
         <select class="dr-sel" id="dr-resp" onchange="updateCardResp()">
         </select>
       </div>
-      <div class="dr-row"><i class="ti ti-calendar-plus"></i><span>Inicio</span>
-        <input type="date" class="dr-date" id="dr-start" onchange="onStartDateChange()">
-      </div>
       <div class="dr-row"><i class="ti ti-calendar-due"></i><span>Vencimiento</span>
         <input type="date" class="dr-date" id="dr-end" onchange="onDateChange()">
-      </div>
-      <div class="dr-row"><i class="ti ti-calendar-check"></i><span>Cumplimiento real</span>
-        <input type="date" class="dr-date" id="dr-realdate" disabled style="opacity:.7;cursor:not-allowed">
       </div>
       <div class="dr-row"><i class="ti ti-git-branch"></i><span>Depende de</span>
         <select class="dr-sel" id="dr-dep" onchange="updateCardDep()">
@@ -1000,6 +981,12 @@ function loadFromGAS() {
     try { renderTimeline(); } catch(e) { console.error('renderTimeline:', e); }
     try { populateUserSelects(); } catch(e) { console.error('populateUserSelects:', e); }
     if (overlay) overlay.style.display = 'none';
+    // Seed version baseline for auto-poll
+    var cbV = 'gasVer_' + Date.now();
+    var sV  = document.createElement('script');
+    window[cbV] = function(d) { if (d && d.version) _lastVersion = d.version; delete window[cbV]; if (document.head.contains(sV)) document.head.removeChild(sV); };
+    sV.src = GAS_URL + '?action=getVersion&callback=' + cbV;
+    document.head.appendChild(sV);
   }
 
   // Timeout after 8s — render with whatever data we have (empty or local)
@@ -1058,18 +1045,15 @@ function loadFromGAS() {
             if (raw.startsWith('[')) subs = JSON.parse(raw);
           } catch(e) { subs = []; }
           TASKS.push({
-            id:        String(t.id),
-            proj:      String(t.proj),
-            title:     String(t.title),
-            status:    String(t.status    || 'todo'),
-            resp:      String(t.resp      || ''),
-            date:      parseSheetDate(t.date),
-            startdate: parseSheetDate(t.startdate),
-            priority:  String(t.priority  || 'medium'),
-            dep:       String(t.dep       || ''),
-            desc:      String(t.desc      || ''),
-            realdate:  String(t.realdate  || ''),
-            subtasks:  subs
+            id:       String(t.id),
+            proj:     String(t.proj),
+            title:    String(t.title),
+            status:   String(t.status   || 'todo'),
+            resp:     String(t.resp     || ''),
+            date:     parseSheetDate(t.date),
+            priority: String(t.priority || 'medium'),
+            dep:      String(t.dep      || ''),
+            subtasks: subs
           });
         });
       }
@@ -1664,14 +1648,10 @@ function makeCard(task) {
       '</div>'
     : '';
 
-  const dateRange = task.startdate && task.date
-    ? task.startdate + ' → ' + task.date
-    : task.date || (task.startdate ? 'Inicio: ' + task.startdate : '');
-
   card.innerHTML = '<div class="card-title">' + task.title + '</div>' +
     '<div class="card-meta">' +
       '<div class="av ' + avatarClass + '">' + (task.resp || '?') + '</div>' +
-      (dateRange ? '<div class="' + dateClass + '"><i class="ti ' + dateIcon + '"></i>' + dateRange + '</div>' : '') +
+      (task.date ? '<div class="' + dateClass + '"><i class="ti ' + dateIcon + '"></i>' + task.date + '</div>' : '') +
     '</div>' +
     progressHTML;
   return card;
@@ -1702,17 +1682,13 @@ function makeKcard(task) {
       '</div>'
     : '';
 
-  const dateRangeK = task.startdate && task.date
-    ? task.startdate + ' → ' + task.date
-    : task.date || (task.startdate ? 'Inicio: ' + task.startdate : '');
-
   kcard.innerHTML =
     '<div class="kcard-proj"><span class="dot" style="background:' + (proj.col||'#888') + ';width:6px;height:6px"></span>' + (proj.name||task.proj) + '</div>' +
     '<div class="kcard-title">' + task.title + '</div>' +
     progressHTML +
     '<div class="kcard-foot">' +
       '<div class="av ' + avatarClass + '">' + (task.resp||'?') + '</div>' +
-      (dateRangeK ? '<div class="' + dateClass + '"><i class="ti ti-calendar"></i>' + dateRangeK + '</div>' : '') +
+      (task.date ? '<div class="' + dateClass + '"><i class="ti ti-calendar"></i>' + task.date + '</div>' : '') +
     '</div>';
   return kcard;
 }
@@ -1964,8 +1940,7 @@ function saveInline(inp) {
   const proj = inp.dataset.proj, status = inp.dataset.status;
   const newId = 't' + Date.now();
   const defaultResp = currentUser ? currentUser.initials : (USERS.length ? USERS[0].initials : '');
-  const todayStr = today();
-  const newTask = {id:newId, proj, title:val, status, resp:defaultResp, date:'', startdate:todayStr, priority:'medium', dep:'', subtasks:[]};
+  const newTask = {id:newId, proj, title:val, status, resp:defaultResp, date:'', priority:'medium', dep:'', subtasks:[]};
   TASKS.push(newTask);
   rebuildProjTasks();
   renderMatrix();
@@ -1973,7 +1948,7 @@ function saveInline(inp) {
   renderTimeline();
   // Persist to GAS
   gasCall({ action:'saveTask', task: JSON.stringify({
-    id:newId, proj, title:val, status, resp:defaultResp, date:'', startdate:todayStr, priority:'medium', dep:'', subtasks:'[]'
+    id:newId, proj, title:val, status, resp:defaultResp, date:'', priority:'medium', dep:'', subtasks:'[]'
   })}, null, null);
   inp.value = ''; wrap.classList.remove('open');
   toast('✓ Actividad añadida');
@@ -2017,13 +1992,13 @@ function saveKAdd(fid) {
   // Add to TASKS[] — single source of truth
   TASKS.push({
     id: newId, proj, title: val, status, resp,
-    date: '', startdate: today(), priority: 'medium', dep: '', subtasks: []
+    date: '', priority: 'medium', dep: '', subtasks: []
   });
 
   // Persist to GAS
   gasCall({ action: 'saveTask', task: JSON.stringify({
     id: newId, proj, title: val, status, resp,
-    date: '', startdate: today(), priority: 'medium', dep: '', subtasks: '[]'
+    date: '', priority: 'medium', dep: '', subtasks: '[]'
   })}, null, null);
 
   // Re-render both views from TASKS[]
@@ -2039,17 +2014,6 @@ function saveKAdd(fid) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // DRAWER
 // ═══════════════════════════════════════════════════════════════════════════════
-// Static date helper used by makeStItem
-openDrawer.__dateStrToISO = function(str) {
-  if (!str) return '';
-  const mns = {Ene:1,Feb:2,Mar:3,Abr:4,May:5,Jun:6,Jul:7,Ago:8,Sep:9,Oct:10,Nov:11,Dic:12};
-  const parts = str.trim().split(' ');
-  if (parts.length < 2) return '';
-  const day = parts[0].padStart(2,'0');
-  const mon = String(mns[parts[1]] || 0).padStart(2,'0');
-  return mon ? '2026-' + mon + '-' + day : '';
-};
-
 function openDrawer(card) {
   activeCard = card;
   const taskId = card.dataset.taskId;
@@ -2075,11 +2039,6 @@ function openDrawer(card) {
   }
 
   document.getElementById('dr-title').textContent = title;
-  const descEl = document.getElementById('dr-desc');
-  const descVal = task ? (task.desc || '') : '';
-  descEl.textContent = descVal || 'Sin descripción — haz clic en Editar para añadir.';
-  descEl.style.color = descVal ? 'var(--text2)' : 'var(--text3)';
-  descEl.style.fontStyle = descVal ? '' : 'italic';
   const projEl = document.getElementById('dr-proj');
   projEl.textContent = (PROJ[proj] || {name:proj}).name;
   projEl.style.color = {p1:'var(--p1)',p2:'var(--p2)',p3:'var(--p3)',p4:'var(--p4)'}[proj] || 'var(--text)';
@@ -2096,22 +2055,9 @@ function openDrawer(card) {
 
   document.getElementById('dr-resp').value = resp;
 
-  // Populate start date — default to today if empty
-  const startISO = task && task.startdate ? (task.startdate.match(/^\d{4}-\d{2}-\d{2}/) ? task.startdate : dateStrToISO(task.startdate)) : today();
-  document.getElementById('dr-start').value = startISO;
-
   // Populate end date (vencimiento) from task.date
   const endISO = task && task.date ? dateStrToISO(task.date) : (card.dataset.endDate || '');
   document.getElementById('dr-end').value = endISO;
-
-  // Populate realdate (read-only)
-  const rdRow = document.getElementById('dr-realdate-row');
-  const rdEl  = document.getElementById('dr-realdate');
-  const rdInput = document.getElementById('dr-realdate');
-  if (rdInput) {
-    const rd = task ? (task.realdate || '') : '';
-    rdInput.value = rd ? dateStrToISO(rd) : '';
-  }
 
   const depSel = document.getElementById('dr-dep');
   depSel.innerHTML = '<option value="">— ninguna —</option>';
@@ -2129,315 +2075,23 @@ function openDrawer(card) {
   if (stList && task) {
     stList.innerHTML = '';
     (task.subtasks || []).forEach(st => {
-      stList.appendChild(makeStItem(st));
+      const item = document.createElement('div');
+      item.className = 'st-item';
+      const respOpts = '<option value="">—</option>' + USERS.map(u =>
+        '<option value="' + u.initials + '"' + (st.resp===u.initials?' selected':'') + '>' + u.initials + '</option>'
+      ).join('');
+      item.innerHTML = '<button class="st-chk' + (st.done?' done':'') + '" onclick="toggleSt(this)"></button>' +
+        '<span class="st-txt' + (st.done?' done':'') + '">' + st.text + '</span>' +
+        '<select class="st-resp" onchange="saveStResp(this)">' + respOpts + '</select>' +
+        '<button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>';
+      stList.appendChild(item);
     });
-    initStDrag(stList);
-    _attachCrossDrag(stList);
   }
   updateStProgress();
   document.getElementById('drawer').classList.add('open');
 }
 
 function closeDrawer() { document.getElementById('drawer').classList.remove('open'); }
-
-function saveStDuedate(input) {
-  if (!activeCard || !activeCard.dataset.taskId) return;
-  const task = getTask(activeCard.dataset.taskId);
-  if (!task) return;
-  const items = Array.from(document.querySelectorAll('#st-list .st-item'));
-  const idx = items.indexOf(input.closest('.st-item'));
-  if (idx === -1 || !task.subtasks[idx]) return;
-  const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  function isoToShort(iso) {
-    if (!iso) return '';
-    const p = iso.split('-'); if (p.length < 3) return '';
-    return parseInt(p[2],10) + ' ' + mns[parseInt(p[1],10)-1];
-  }
-  task.subtasks[idx].duedate = isoToShort(input.value);
-  gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) }, null, null);
-  toast('✓ Fecha de tarea guardada');
-}
-
-function editStName(btn) {
-  const item  = btn.closest('.st-item');
-  const txtEl = item.querySelector('.st-txt');
-  const prev  = txtEl.textContent;
-  // Replace span with input
-  const inp = document.createElement('input');
-  inp.type  = 'text';
-  inp.value = prev;
-  inp.style.cssText = 'flex:1;font-size:12px;padding:1px 5px;border:1.5px solid var(--blue);border-radius:5px;outline:none;background:var(--white);color:var(--text);min-width:0';
-  txtEl.replaceWith(inp);
-  inp.className = 'st-txt';
-  inp.focus(); inp.select();
-  function save() {
-    const nv = inp.value.trim() || prev;
-    const span = document.createElement('span');
-    span.className = 'st-txt' + (item.querySelector('.st-chk').classList.contains('done') ? ' done' : '');
-    span.textContent = nv;
-    inp.replaceWith(span);
-    if (!activeCard || !activeCard.dataset.taskId) return;
-    const task = getTask(activeCard.dataset.taskId);
-    if (!task) return;
-    const items = Array.from(document.querySelectorAll('#st-list .st-item'));
-    const idx = items.indexOf(item);
-    if (idx > -1 && task.subtasks[idx]) {
-      task.subtasks[idx].text = nv;
-      gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) }, null, null);
-      if (nv !== prev) toast('✓ Nombre de tarea actualizado');
-    }
-  }
-  inp.onblur = save;
-  inp.onkeydown = function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
-    if (e.key === 'Escape') { inp.value = prev; inp.blur(); }
-  };
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// SUBTASK DRAG — reorder within activity + move between activities
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// Build a single st-item element (with drag handle, duedate, realdate, pencil edit)
-function makeStItem(st) {
-  const item = document.createElement('div');
-  item.className = 'st-item';
-  item.draggable = true;
-  const respOpts = '<option value="">—</option>' + USERS.map(function(u) {
-    return '<option value="' + u.initials + '"' + (st.resp === u.initials ? ' selected' : '') + '>' + u.initials + '</option>';
-  }).join('');
-
-  // Get activity max date for duedate constraint
-  const actTask = (activeCard && activeCard.dataset.taskId) ? getTask(activeCard.dataset.taskId) : null;
-  const maxDate = actTask && actTask.date ? openDrawer.__dateStrToISO(actTask.date) : '';
-
-  // Convert stored short dates to ISO for input values
-  const dueDateISO  = st.duedate  ? openDrawer.__dateStrToISO(st.duedate)  : '';
-  const realDateISO = st.realdate ? openDrawer.__dateStrToISO(st.realdate) : '';
-
-  item.innerHTML =
-    // Row 1: drag | check | text | pencil | resp | del
-    '<div class="st-row1">' +
-      '<span class="st-drag-handle" title="Arrastrar"><i class="ti ti-grip-vertical"></i></span>' +
-      '<button class="st-chk' + (st.done ? ' done' : '') + '" onclick="toggleSt(this)"></button>' +
-      '<span class="st-txt' + (st.done ? ' done' : '') + '">' + st.text + '</span>' +
-      '<button class="st-pencil" title="Editar nombre" onclick="editStName(this)"><i class="ti ti-pencil"></i></button>' +
-      '<select class="st-resp" onchange="saveStResp(this)">' + respOpts + '</select>' +
-      '<button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>' +
-    '</div>' +
-    // Row 2: duedate + realdate label
-    '<div class="st-row2">' +
-      '<span class="st-date-lbl"><i class="ti ti-calendar-due" style="font-size:10px"></i> Vence:</span>' +
-      '<input type="date" class="st-date-input" ' + (maxDate ? 'max="' + maxDate + '"' : '') + ' value="' + dueDateISO + '" onchange="saveStDuedate(this)">' +
-      '<span class="st-date-lbl" style="margin-left:10px"><i class="ti ti-calendar-check" style="font-size:10px"></i> Real:</span>' +
-      '<span class="st-real-label' + (st.realdate ? '' : ' empty') + '">' + (st.realdate || '—') + '</span>' +
-    '</div>';
-  return item;
-}
-
-// ── Internal reorder drag (within same st-list) ──────────────────────────────
-var _stDragSrc = null;
-
-function initStDrag(list) {
-  list.querySelectorAll('.st-item').forEach(function(item) {
-    item.addEventListener('dragstart', function(e) {
-      _stDragSrc = item;
-      item.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', 'st-reorder');
-    });
-    item.addEventListener('dragend', function() {
-      item.classList.remove('dragging');
-      list.querySelectorAll('.st-item').forEach(function(i) {
-        i.classList.remove('drag-over-top','drag-over-bottom');
-      });
-      _stDragSrc = null;
-    });
-    item.addEventListener('dragover', function(e) {
-      if (!_stDragSrc || _stDragSrc === item) return;
-      if (e.dataTransfer.getData && e.dataTransfer.types && e.dataTransfer.types.includes('text/plain')) {
-        var type = 'st-reorder';
-      }
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      list.querySelectorAll('.st-item').forEach(function(i) {
-        i.classList.remove('drag-over-top','drag-over-bottom');
-      });
-      var rect = item.getBoundingClientRect();
-      var mid  = rect.top + rect.height / 2;
-      item.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
-    });
-    item.addEventListener('drop', function(e) {
-      e.preventDefault();
-      if (!_stDragSrc || _stDragSrc === item) return;
-      var rect = item.getBoundingClientRect();
-      var mid  = rect.top + rect.height / 2;
-      var insertBefore = e.clientY < mid;
-      if (insertBefore) {
-        list.insertBefore(_stDragSrc, item);
-      } else {
-        list.insertBefore(_stDragSrc, item.nextSibling);
-      }
-      list.querySelectorAll('.st-item').forEach(function(i) {
-        i.classList.remove('drag-over-top','drag-over-bottom');
-      });
-      _persistStOrder();
-    });
-  });
-}
-
-// Save reordered subtasks to TASKS[] + GAS
-function _persistStOrder() {
-  if (!activeCard || !activeCard.dataset.taskId) return;
-  const task = getTask(activeCard.dataset.taskId);
-  if (!task) return;
-  const items = document.querySelectorAll('#st-list .st-item');
-  task.subtasks = Array.from(items).map(function(item) {
-    const dd  = item.querySelector('.st-date-input');
-    const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    function isoToShort(iso) {
-      if (!iso) return '';
-      const p = iso.split('-'); if (p.length < 3) return '';
-      return parseInt(p[2],10) + ' ' + mns[parseInt(p[1],10)-1];
-    }
-    const rdLbl = item.querySelector('.st-real-label');
-    const rdVal = rdLbl && !rdLbl.classList.contains('empty') ? rdLbl.textContent.trim() : '';
-    const txtEl = item.querySelector('.st-txt');
-    return {
-      text:     txtEl ? txtEl.textContent : '',
-      done:     item.querySelector('.st-chk').classList.contains('done'),
-      resp:     item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : '',
-      duedate:  dd ? isoToShort(dd.value) : '',
-      realdate: rdVal === '—' ? '' : rdVal
-    };
-  });
-  gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) },
-    function(r) { if (r && r.ok === false) toast('⚠ Error al reordenar'); },
-    function()  { toast('⚠ Sin conexión'); }
-  );
-  renderMatrix();
-  renderKanban();
-  renderTimeline();
-  toast('✓ Subtarea reordenada');
-}
-
-// ── Cross-activity drag (drop onto card/kcard) ────────────────────────────────
-var _stDragData = null; // { taskId, stIndex, stObj }
-
-// Called on dragstart from a st-item when crossing to another activity
-function _stStartCross(item, e) {
-  if (!activeCard || !activeCard.dataset.taskId) return;
-  const task = getTask(activeCard.dataset.taskId);
-  if (!task) return;
-  const items = Array.from(document.querySelectorAll('#st-list .st-item'));
-  const idx   = items.indexOf(item);
-  if (idx === -1) return;
-  _stDragData = { fromTaskId: task.id, stIndex: idx, stObj: task.subtasks[idx] };
-  e.dataTransfer.setData('text/plain', 'st-cross');
-  e.dataTransfer.effectAllowed = 'move';
-}
-
-// Attach cross-activity drag to each st-item dragstart
-function _attachCrossDrag(list) {
-  list.querySelectorAll('.st-item').forEach(function(item) {
-    item.addEventListener('dragstart', function(e) {
-      // Wait a tick to detect if mouse leaves the drawer
-      setTimeout(function() {
-        if (_stDragData === null) _stStartCross(item, e);
-      }, 0);
-      _stStartCross(item, e);
-    });
-  });
-}
-
-// Enable cards/kcards as drop targets while a subtask is being dragged
-function _enableCardDropTargets(enable) {
-  var cards = document.querySelectorAll('.card[data-task-id],.kcard[data-task-id]');
-  cards.forEach(function(card) {
-    if (enable) {
-      card.addEventListener('dragover',  _onCardDragOver);
-      card.addEventListener('dragleave', _onCardDragLeave);
-      card.addEventListener('drop',      _onCardDrop);
-    } else {
-      card.removeEventListener('dragover',  _onCardDragOver);
-      card.removeEventListener('dragleave', _onCardDragLeave);
-      card.removeEventListener('drop',      _onCardDrop);
-    }
-  });
-}
-
-function _onCardDragOver(e) {
-  if (!_stDragData) return;
-  const destTaskId = this.dataset.taskId;
-  if (destTaskId === _stDragData.fromTaskId) return; // same activity
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  this.classList.add('st-drop-target');
-}
-
-function _onCardDragLeave() {
-  this.classList.remove('st-drop-target');
-}
-
-function _onCardDrop(e) {
-  e.preventDefault();
-  this.classList.remove('st-drop-target');
-  if (!_stDragData) return;
-  const destTaskId = this.dataset.taskId;
-  if (!destTaskId || destTaskId === _stDragData.fromTaskId) return;
-
-  const fromTask = getTask(_stDragData.fromTaskId);
-  const destTask = getTask(destTaskId);
-  if (!fromTask || !destTask) return;
-
-  const stObj = _stDragData.stObj;
-
-  // Remove from source
-  fromTask.subtasks = fromTask.subtasks.filter(function(_, i) { return i !== _stDragData.stIndex; });
-  // Append to destination
-  destTask.subtasks.push(stObj);
-
-  // Persist both
-  gasCall({ action: 'updateTask', id: fromTask.id, field: 'subtasks', value: JSON.stringify(fromTask.subtasks) }, null, null);
-  gasCall({ action: 'updateTask', id: destTask.id, field: 'subtasks', value: JSON.stringify(destTask.subtasks) }, null, null);
-
-  renderMatrix();
-  renderKanban();
-  renderTimeline();
-
-  // If drawer is open on the source task, refresh it
-  if (activeCard && activeCard.dataset.taskId === fromTask.id) {
-    const stList = document.getElementById('st-list');
-    stList.innerHTML = '';
-    fromTask.subtasks.forEach(function(s) { stList.appendChild(makeStItem(s)); });
-    initStDrag(stList);
-    _attachCrossDrag(stList);
-    updateStProgress();
-  }
-
-  _stDragData = null;
-  _enableCardDropTargets(false);
-  toast('✓ Subtarea movida a "' + (destTask.title || destTaskId) + '"');
-}
-
-// Hook dragstart/dragend on the drawer to toggle card drop targets
-function _initDrawerCrossDrag() {
-  const drawer = document.getElementById('drawer');
-  drawer.addEventListener('dragstart', function(e) {
-    if (e.target.closest('.st-item')) {
-      setTimeout(function() { _enableCardDropTargets(true); }, 50);
-    }
-  });
-  drawer.addEventListener('dragend', function(e) {
-    if (e.target.closest('.st-item')) {
-      _enableCardDropTargets(false);
-      _stDragData = null;
-      document.querySelectorAll('.card.st-drop-target,.kcard.st-drop-target').forEach(function(c) {
-        c.classList.remove('st-drop-target');
-      });
-    }
-  });
-}
 
 function updateCardResp() {
   if (!activeCard) return;
@@ -2474,25 +2128,6 @@ function updateCardDep() {
   if (task) task.dep = val;
 }
 
-function onStartDateChange() {
-  if (!activeCard) return;
-  const startVal = document.getElementById('dr-start').value;
-  const task = getTask(activeCard.dataset.taskId);
-  if (task && startVal) {
-    const d = new Date(startVal + 'T00:00:00');
-    const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    task.startdate = d.getDate() + ' ' + mns[d.getMonth()];
-    gasCall({ action: 'updateTask', id: task.id, field: 'startdate', value: task.startdate },
-      function(r) { if (r && r.ok === false) toast('⚠ Error al guardar fecha inicio'); },
-      function()  { toast('⚠ Sin conexión al guardar fecha inicio'); }
-    );
-    renderMatrix();
-    renderKanban();
-    renderTimeline();
-    toast('✓ Fecha inicio actualizada');
-  }
-}
-
 function onDateChange() {
   if (!activeCard) return;
   const endVal = document.getElementById('dr-end').value;
@@ -2523,7 +2158,6 @@ function onDateChange() {
 }
 
 function editTitle() {
-  // Edit title
   const el = document.getElementById('dr-title');
   el.contentEditable = 'true'; el.focus();
   const r = document.createRange(); r.selectNodeContents(el);
@@ -2532,6 +2166,7 @@ function editTitle() {
     el.contentEditable = 'false';
     const nv = el.textContent.trim();
     if (!activeCard || !nv) return;
+    // Persist to TASKS[]
     const task = getTask(activeCard.dataset.taskId);
     if (task) {
       task.title = nv;
@@ -2541,43 +2176,6 @@ function editTitle() {
     toast('✓ Título actualizado');
   };
   el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } };
-
-  // Edit description — replace static div with textarea
-  const descEl = document.getElementById('dr-desc');
-  const task = getTask(activeCard && activeCard.dataset.taskId);
-  const currentDesc = task ? (task.desc || '') : '';
-
-  const ta = document.createElement('textarea');
-  ta.value = currentDesc;
-  ta.placeholder = 'Escribe una descripción...';
-    ta.style.cssText = "width:100%;min-height:72px;padding:7px 9px;font-size:12px;color:var(--text);border:1.5px solid var(--blue);border-radius:8px;resize:vertical;outline:none;line-height:1.65;background:var(--white);box-shadow:0 0 0 3px var(--blue-light);box-sizing:border-box";
-  descEl.replaceWith(ta);
-  ta.id = 'dr-desc';
-  // Don't auto-focus textarea — title keeps focus so user can edit it first
-
-  function saveDesc() {
-    const nv = ta.value.trim();
-    const newDiv = document.createElement('div');
-    newDiv.id = 'dr-desc';
-    newDiv.style.cssText = 'font-size:12px;line-height:1.65';
-    newDiv.style.color = nv ? 'var(--text2)' : 'var(--text3)';
-    newDiv.style.fontStyle = nv ? '' : 'italic';
-    newDiv.textContent = nv || 'Sin descripción — haz clic en Editar para añadir.';
-    ta.replaceWith(newDiv);
-    if (!activeCard || !activeCard.dataset.taskId) return;
-    const t2 = getTask(activeCard.dataset.taskId);
-    if (t2) {
-      t2.desc = nv;
-      gasCall({ action: 'updateTask', id: t2.id, field: 'desc', value: nv },
-        function(r) { if (r && r.ok === false) toast('⚠ Error al guardar descripción'); },
-        function()  { toast('⚠ Sin conexión al guardar descripción'); }
-      );
-    }
-    if (nv) toast('✓ Descripción guardada');
-  }
-
-  ta.onblur = saveDesc;
-  ta.onkeydown = function(e) { if (e.key === 'Escape') { ta.value = currentDesc; ta.blur(); } };
 }
 
 function toggleMovePopover() {
@@ -2647,59 +2245,16 @@ function toggleSt(btn) {
   if (activeCard && activeCard.dataset.taskId) {
     const task = getTask(activeCard.dataset.taskId);
     if (task) {
-      const mns2 = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-      function _isoToShort(iso) {
-        if (!iso) return '';
-        const p = iso.split('-'); if (p.length < 3) return '';
-        return parseInt(p[2],10) + ' ' + mns2[parseInt(p[1],10)-1];
-      }
-      const nowD = new Date();
-      const todayShort = nowD.getDate() + ' ' + mns2[nowD.getMonth()];
-      task.subtasks = Array.from(document.querySelectorAll('#st-list .st-item')).map(function(item) {
-        const isDone   = item.querySelector('.st-chk').classList.contains('done');
-        const ddInputs = item.querySelectorAll('.st-date-input');
-        const prevReal = ddInputs[1] ? ddInputs[1].value : '';
-        // Auto set/clear realdate for this individual task
-        let newReal = '';
-        if (isDone) { newReal = prevReal ? _isoToShort(prevReal) : todayShort; }
-        // Update the real label display
-        const realLbl = item.querySelector('.st-real-label');
-        if (realLbl) {
-          realLbl.textContent = newReal || '—';
-          realLbl.className = 'st-real-label' + (newReal ? '' : ' empty');
-        }
-        return {
-          text:     item.querySelector('.st-txt').textContent || item.querySelector('input.st-txt') && item.querySelector('input.st-txt').value || '',
-          done:     isDone,
-          resp:     item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : '',
-          duedate:  ddInputs[0] ? _isoToShort(ddInputs[0].value) : '',
-          realdate: newReal
-        };
-      });
+      task.subtasks = Array.from(document.querySelectorAll('#st-list .st-item')).map(item => ({
+        text: item.querySelector('.st-txt').textContent,
+        done: item.querySelector('.st-chk').classList.contains('done'),
+        resp: item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : ''
+      }));
       // Persist subtasks to GAS
       gasCall({ action: 'updateTask', id: activeCard.dataset.taskId, field: 'subtasks', value: JSON.stringify(task.subtasks) },
         function(r) { if (r && r.ok === false) toast('⚠ Error GAS: ' + (r.error||'subtareas')); },
         function()  { toast('⚠ Sin conexión al guardar subtarea'); }
       );
-
-      // Auto realdate: all done → set today; any undone → clear
-      const allDone = task.subtasks.length > 0 && task.subtasks.every(function(s) { return s.done; });
-      const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-      const d = new Date();
-      const todayLabel = d.getDate() + ' ' + mns[d.getMonth()];
-      const newRealdate = allDone ? todayLabel : '';
-      if (task.realdate !== newRealdate) {
-        task.realdate = newRealdate;
-        gasCall({ action: 'updateTask', id: task.id, field: 'realdate', value: newRealdate }, null, null);
-        // Update drawer realdate display
-        const rdRow = document.getElementById('dr-realdate-row');
-        const rdEl  = document.getElementById('dr-realdate');
-        const rdInput = document.getElementById('dr-realdate');
-        if (rdInput) {
-          rdInput.value = newRealdate ? dateStrToISO(newRealdate) : '';
-        }
-      }
-
       // Re-render cards so progress bars update immediately in both views
       renderMatrix();
       renderKanban();
@@ -2774,9 +2329,8 @@ function saveStInline() {
   if (val) {
     const item = document.createElement('div'); item.className = 'st-item';
     const respOpts2 = '<option value="" selected>—</option>' + USERS.map(u => '<option value="' + u.initials + '">' + u.initials + '</option>').join('');
-    document.getElementById('st-list').appendChild(makeStItem({text:val, done:false, resp:''}));
-    initStDrag(document.getElementById('st-list'));
-    _attachCrossDrag(document.getElementById('st-list'));
+    item.innerHTML = '<button class="st-chk" onclick="toggleSt(this)"></button><span class="st-txt">' + val + '</span><select class="st-resp" onchange="saveStResp(this)">' + respOpts2 + '</select><button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>';
+    document.getElementById('st-list').appendChild(item);
     if (activeCard && activeCard.dataset.taskId) {
       const task = getTask(activeCard.dataset.taskId);
       if (task) {
@@ -3105,23 +2659,9 @@ function setTLView(view, btn) {
     const mi = now.getMonth();
     if (mi < TL_MONTHS.length) {
       const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
-      const LBL_W = 230;
-      const scrollTo = LBL_W + (todayPct / 100) * (wrap.scrollWidth - LBL_W) - scroll.clientWidth / 2;
+      const scrollTo = (todayPct / 100) * wrap.scrollWidth - scroll.clientWidth / 2;
       scroll.scrollLeft = Math.max(0, scrollTo);
     }
-    // Reposition today line now that wrap has correct width
-    requestAnimationFrame(() => {
-      const tl = document.getElementById('tl-today');
-      if (!tl) return;
-      const b = document.getElementById('tl-body');
-      const bW = b ? (b.scrollWidth || b.offsetWidth) : 0;
-      if (!bW) return;
-      const LBL_W = 230;
-      const now2 = new Date();
-      const mi2 = now2.getMonth();
-      const pct = TL_MONTHS[mi2].s + ((now2.getDate()-1)/TL_MONTHS[mi2].d)*(TL_MONTHS[mi2].d/365)*100;
-      tl.style.left = (LBL_W + (pct/100)*(bW - LBL_W)) + 'px';
-    });
   });
 }
 
@@ -3310,16 +2850,12 @@ function endDrag() {
       const taskId = bar.dataset.taskId;
       const task = taskId ? getTask(taskId) : null;
       if (task) {
-        const ar = AR[actId];
-        const newStartLabel = pctToLabel(ar.l);
-        const newEndLabel   = pctToLabel(ar.l + ar.w);
-        if (newEndLabel) {
-          task.date = newEndLabel;
-          gasCall({ action: 'updateTask', id: task.id, field: 'date', value: newEndLabel }, null, null);
-        }
-        if (newStartLabel) {
-          task.startdate = newStartLabel;
-          gasCall({ action: 'updateTask', id: task.id, field: 'startdate', value: newStartLabel }, null, null);
+        const rawLabel = bar.querySelector('.bar-inner') ? bar.querySelector('.bar-inner').textContent.trim() : '';
+        const newDate = barLabelToDate(rawLabel);
+        if (newDate) {
+          task.date = newDate;
+          // Save to GAS
+          gasCall({ action: 'updateTask', id: task.id, field: 'date', value: newDate }, null, null);
         }
         renderMatrix();
         renderKanban();
@@ -3393,22 +2929,11 @@ function renderTimeline() {
   body.innerHTML = '';
   if (todayLine) body.appendChild(todayLine);
 
-  // Today line position — use % relative to tl-body (which spans full WRAP_W)
-  // todayPct is already proportional to the full year bar area
-  // We store it and reposition after the DOM settles via a single rAF
+  // Today line position
   const now = new Date();
   const mi  = now.getMonth();
   const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
-  function _setTodayLine() {
-    const tl = document.getElementById('tl-today');
-    if (!tl) return;
-    const b = document.getElementById('tl-body');
-    const bW = b ? (b.scrollWidth || b.offsetWidth) : 0;
-    if (!bW) return;
-    const LBL_W = 230;
-    tl.style.left = (LBL_W + (todayPct / 100) * (bW - LBL_W)) + 'px';
-  }
-  requestAnimationFrame(_setTodayLine);
+  if (todayLine) todayLine.style.left = todayPct + '%';
 
   const projIds = Object.keys(PROJ);
   if (projIds.length === 0) {
@@ -3470,19 +2995,14 @@ function renderTimeline() {
     group.id = groupId;
     projTasks.forEach(function(task, idx) {
       const actId = 'ab-' + pid + '-' + idx;
-      const pctEnd   = tlDateToPct(task.date);
-      // Only use startdate if it exists in the data (not the today() default)
-      const hasStart = task.startdate && task.startdate.trim();
-      const pctStart = hasStart ? tlDateToPct(task.startdate) : null;
-      const left  = pctStart !== null ? pctStart : (pctEnd !== null ? Math.max(0, pctEnd - (1/365)*100*4) : projL + 2);
-      const right = pctEnd  !== null ? pctEnd  : (left + (1/365)*100*4);
-      const actW  = Math.max((1/365)*100*1, right - left);
+      const pct2 = tlDateToPct(task.date);
+      const wPct = (1 / 365) * 100 * 2; // ~2 days wide
+      const left = pct2 !== null ? Math.max(0, pct2 - wPct) : projL + 2;
+      const actW = wPct * 2; // 4 days total bar width
       AR[actId] = { l: left, w: actW, p: pid };
 
-      const startLabel = hasStart ? task.startdate : '';
-      const endLabel   = task.date || pctToLabel(left + actW);
       const barCls = task.status === 'done' ? 'bar-ok' : task.status === 'doing' ? 'bar-doing' : 'bar-sl';
-      const label  = task.status === 'done' ? '✓ ' + endLabel : (startLabel && startLabel !== endLabel ? startLabel + ' — ' + endLabel : endLabel);
+      const label  = task.status === 'done' ? '✓ ' + task.date : task.status === 'doing' ? 'En curso — ' + (task.date||'—') : (task.date || '—');
       const actBarStyle = tlPctToStyle(left, actW);
 
       const row = document.createElement('div');
@@ -3552,20 +3072,6 @@ function renderTimeline() {
   });
 
   reapplyFiltersIfActive();
-
-  // Position today line after body is fully populated
-  (function positionTodayLine() {
-    const tl = document.getElementById('tl-today');
-    if (!tl) return;
-    const b = document.getElementById('tl-body');
-    const bW = b ? b.scrollWidth : 0;
-    if (bW > 300) {
-      const LBL_W = 230;
-      tl.style.left = (LBL_W + (todayPct / 100) * (bW - LBL_W)) + 'px';
-    } else {
-      requestAnimationFrame(positionTodayLine);
-    }
-  })();
 }
 
 // Keep initTLBars as alias for backward compat
@@ -3670,6 +3176,148 @@ function changeMyPassword() {
   }, function(err) { toast('⚠ Error: ' + err); });
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// REFRESH — manual + auto-poll every 30s
+// ═══════════════════════════════════════════════════════════════════════════════
+var _lastVersion = '';
+var _pollTimer   = null;
+
+function _setRefreshSpinner(on) {
+  var icon = document.getElementById('refresh-icon');
+  if (!icon) return;
+  if (on) {
+    icon.className = 'ti ti-refresh';
+    icon.style.animation = 'spin 1s linear infinite';
+  } else {
+    icon.style.animation = '';
+  }
+}
+
+function manualRefresh() {
+  if (document.getElementById('drawer').classList.contains('open')) closeDrawer();
+  _setRefreshSpinner(true);
+  var cbName = 'gasRefresh_' + Date.now();
+  var url = GAS_URL + '?action=getData&callback=' + cbName;
+  var script = document.createElement('script');
+  var timer = setTimeout(function() {
+    delete window[cbName];
+    if (document.head.contains(script)) document.head.removeChild(script);
+    _setRefreshSpinner(false);
+    toast('⚠ Sin respuesta del servidor');
+  }, 10000);
+  window[cbName] = function(data) {
+    clearTimeout(timer);
+    delete window[cbName];
+    if (document.head.contains(script)) document.head.removeChild(script);
+    _setRefreshSpinner(false);
+    if (data && data.ok !== false) {
+      _applyGASData(data);
+      toast('✓ Datos actualizados');
+    } else {
+      toast('⚠ Error al actualizar');
+    }
+  };
+  script.onerror = function() {
+    clearTimeout(timer);
+    delete window[cbName];
+    if (document.head.contains(script)) document.head.removeChild(script);
+    _setRefreshSpinner(false);
+    toast('⚠ Sin conexión');
+  };
+  document.head.appendChild(script);
+}
+
+// Apply fresh GAS data without full page reload
+function _applyGASData(data) {
+  if (data.users && data.users.length) {
+    USERS.length = 0;
+    data.users.forEach(function(u) { USERS.push(u); });
+  }
+  if (data.projects && data.projects.length) {
+    Object.keys(PROJ).forEach(function(k) { delete PROJ[k]; });
+    var colors  = ['var(--p1)','var(--p2)','var(--p3)','var(--p4)'];
+    var classes = ['kp1','kp2','kp3','kp4'];
+    data.projects.forEach(function(p, i) {
+      var startISO = normalizeISODate(p.start);
+      var endISO   = normalizeISODate(p.end);
+      PROJ[p.id] = {
+        name: String(p.name || ''), col: p.color || colors[i % 4],
+        cls: classes[i % 4], start: startISO, end: endISO,
+        startISO: startISO, endISO: endISO, members: String(p.members || '')
+      };
+      PROJ_META[p.id] = { start: startISO, end: endISO, members: String(p.members || '').split(',').filter(Boolean) };
+      if (!PROJ_TASKS[p.id]) PROJ_TASKS[p.id] = [];
+    });
+  }
+  if (data.tasks && data.tasks.length) {
+    TASKS.length = 0;
+    data.tasks.forEach(function(t) {
+      var subs = [];
+      try { var raw = String(t.subtasks || '[]').trim(); if (raw.startsWith('[')) subs = JSON.parse(raw); } catch(e) { subs = []; }
+      TASKS.push({
+        id: String(t.id), proj: String(t.proj), title: String(t.title),
+        status: String(t.status || 'todo'), resp: String(t.resp || ''),
+        date: parseSheetDate(t.date), startdate: parseSheetDate(t.startdate),
+        priority: String(t.priority || 'medium'), dep: String(t.dep || ''),
+        desc: String(t.desc || ''), realdate: String(t.realdate || ''),
+        subtasks: subs
+      });
+    });
+  }
+  rebuildProjTasks();
+  renderMatrix();
+  renderKanban();
+  renderTimeline();
+  populateUserSelects();
+}
+
+// Poll getVersion every 30s — only reload if something changed
+function _startAutoPoll() {
+  _pollTimer = setInterval(function() {
+    // Pause if drawer is open or user is actively typing
+    if (document.getElementById('drawer').classList.contains('open')) return;
+    var cbName = 'gasPoll_' + Date.now();
+    var url = GAS_URL + '?action=getVersion&callback=' + cbName;
+    var script = document.createElement('script');
+    var timer = setTimeout(function() {
+      delete window[cbName];
+      if (document.head.contains(script)) document.head.removeChild(script);
+    }, 8000);
+    window[cbName] = function(data) {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (document.head.contains(script)) document.head.removeChild(script);
+      if (!data || !data.ok) return;
+      var v = data.version || '';
+      if (_lastVersion && v && v !== _lastVersion) {
+        // Something changed — do a silent full refresh
+        var cbName2 = 'gasAutoRefresh_' + Date.now();
+        var url2 = GAS_URL + '?action=getData&callback=' + cbName2;
+        var script2 = document.createElement('script');
+        var timer2 = setTimeout(function() {
+          delete window[cbName2];
+          if (document.head.contains(script2)) document.head.removeChild(script2);
+        }, 10000);
+        window[cbName2] = function(data2) {
+          clearTimeout(timer2);
+          delete window[cbName2];
+          if (document.head.contains(script2)) document.head.removeChild(script2);
+          if (data2 && data2.ok !== false) {
+            closeDrawer();
+            _applyGASData(data2);
+            toast('↻ Datos sincronizados');
+          }
+        };
+        script2.src = url2;
+        document.head.appendChild(script2);
+      }
+      _lastVersion = v;
+    };
+    script.src = url;
+    document.head.appendChild(script);
+  }, 30000);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Check existing session
   const saved = sessionLoad();
@@ -3691,8 +3339,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mi = now.getMonth();
     if (mi < TL_MONTHS.length) {
       const todayPct = TL_MONTHS[mi].s + ((now.getDate() - 1) / TL_MONTHS[mi].d) * (TL_MONTHS[mi].d / 365) * 100;
-      const LBL_W = 230; // label column width px
-      const scrollTo = LBL_W + (todayPct / 100) * (wrap.scrollWidth - LBL_W) - scroll.clientWidth / 2;
+      const scrollTo = (todayPct / 100) * wrap.scrollWidth - scroll.clientWidth / 2;
       scroll.scrollLeft = Math.max(0, scrollTo);
     }
   });
@@ -3756,12 +3403,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Init cross-activity subtask drag
-  _initDrawerCrossDrag();
-
   // Set today date on proj-start default
   const ps = document.getElementById('proj-start');
   if (ps && !ps.value) { const d = new Date(); ps.value = d.toISOString().split('T')[0]; }
+
+  // Start auto-poll for multi-user sync
+  _startAutoPoll();
 });
 </script>
 </body>
