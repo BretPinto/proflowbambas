@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.6 — GAS v8 04/06/2026 17:10-->
+<!-- ProFlow v10.5.7 — GAS v8 04/06/2026 18:36-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -430,6 +430,12 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
     <div class="fchip" id="fc-todo" data-val="todo" onclick="toggleStatusChip(this)"><i class="ti ti-circle"></i>To Do</div>
     <div class="fchip" id="fc-doing" data-val="doing" onclick="toggleStatusChip(this)"><i class="ti ti-loader"></i>Doing</div>
     <div class="fchip" id="fc-done" data-val="done" onclick="toggleStatusChip(this)"><i class="ti ti-circle-check"></i>Done</div>
+    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;border:1px solid var(--border2);border-radius:20px;padding:2px 10px;background:var(--white)">
+      <i class="ti ti-calendar-check" style="font-size:12px;color:var(--text3)"></i>
+      <input type="date" id="filt-real-from" class="filt-date-range" onchange="applyFilters()" title="Real desde" style="border:none;outline:none;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text);background:transparent;width:110px;cursor:pointer">
+      <span style="font-size:11px;color:var(--text3)">—</span>
+      <input type="date" id="filt-real-to" class="filt-date-range" onchange="applyFilters()" title="Real hasta" style="border:none;outline:none;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text);background:transparent;width:110px;cursor:pointer">
+    </div>
     <button class="btn" onclick="clearFilters()" style="flex-shrink:0"><i class="ti ti-x"></i>Limpiar</button>
   </div>
 
@@ -1876,6 +1882,8 @@ function clearFilters() {
   document.getElementById('fsel-resp').value = 'all';
   document.querySelectorAll('.fchip').forEach(c => c.classList.remove('active'));
   document.querySelectorAll('.proj-si').forEach(s => s.classList.remove('proj-active'));
+  var fr = document.getElementById('filt-real-from'); if (fr) fr.value = '';
+  var ft = document.getElementById('filt-real-to');   if (ft) ft.value = '';
   activeStatusFilter = null;
   applyFilters();
 }
@@ -1894,6 +1902,37 @@ function applyFilters() {
   const proj   = document.getElementById('fsel-proj').value;
   const resp   = document.getElementById('fsel-resp').value;
   const status = activeStatusFilter;
+  const realFrom = (document.getElementById('filt-real-from') || {}).value || '';
+  const realTo   = (document.getElementById('filt-real-to')   || {}).value || '';
+  const hasRealFilter = realFrom || realTo;
+
+  // Helper: parse "4 Jun" → Date
+  function parseShortDate(str) {
+    if (!str) return null;
+    var mns = {Ene:0,Feb:1,Mar:2,Abr:3,May:4,Jun:5,Jul:6,Ago:7,Sep:8,Oct:9,Nov:10,Dic:11};
+    var p = str.trim().split(' ');
+    if (p.length < 2) return null;
+    var mi = mns[p[1]];
+    if (mi === undefined) return null;
+    return new Date(2026, mi, parseInt(p[0]));
+  }
+
+  // Helper: is a subtask realdate in range?
+  function stInRange(st) {
+    if (!hasRealFilter) return true;
+    if (!st.realdate) return false;
+    var d = parseShortDate(st.realdate);
+    if (!d) return false;
+    if (realFrom) { var f = new Date(realFrom + 'T00:00:00'); if (d < f) return false; }
+    if (realTo)   { var t = new Date(realTo   + 'T23:59:59'); if (d > t) return false; }
+    return true;
+  }
+
+  // Helper: does this task have at least one subtask in realdate range?
+  function taskHasSubInRange(task) {
+    if (!hasRealFilter) return true;
+    return (task.subtasks || []).some(function(st) { return stInRange(st); });
+  }
 
   // Helper: does this task pass the responsable filter?
   // Match if task.resp matches OR any subtask.resp matches
@@ -1910,6 +1949,7 @@ function applyFilters() {
     if (status !== null && task.status !== status) return false;
     if (!respMatch(task)) return false;
     if (search && !task.title.toLowerCase().includes(search)) return false;
+    if (hasRealFilter && !taskHasSubInRange(task)) return false;
     return true;
   }
 
@@ -2186,9 +2226,41 @@ function openDrawer(card) {
     });
     initStDrag(stList);
     _attachCrossDrag(stList);
+    // Hide subtask items not matching active realdate range filter
+    _applyRealFilterToDrawer(stList);
   }
   updateStProgress();
   document.getElementById('drawer').classList.add('open');
+}
+
+function _applyRealFilterToDrawer(stList) {
+  var realFrom = (document.getElementById('filt-real-from') || {}).value || '';
+  var realTo   = (document.getElementById('filt-real-to')   || {}).value || '';
+  if (!realFrom && !realTo) return; // no filter active
+  var mns = {Ene:0,Feb:1,Mar:2,Abr:3,May:4,Jun:5,Jul:6,Ago:7,Sep:8,Oct:9,Nov:10,Dic:11};
+  function parseShort(str) {
+    if (!str) return null;
+    var p = str.trim().split(' '); if (p.length < 2) return null;
+    var mi = mns[p[1]]; if (mi === undefined) return null;
+    return new Date(2026, mi, parseInt(p[0]));
+  }
+  var list = stList || document.getElementById('st-list');
+  if (!list) return;
+  Array.from(list.querySelectorAll('.st-item')).forEach(function(item) {
+    // Read realdate from the Real input (second st-date-input)
+    var inputs = item.querySelectorAll('.st-date-input');
+    var rdInput = inputs[1];
+    var rdVal = rdInput ? rdInput.value : '';
+    var show = true;
+    if (rdVal) {
+      var d = new Date(rdVal + 'T00:00:00');
+      if (realFrom) { var f = new Date(realFrom + 'T00:00:00'); if (d < f) show = false; }
+      if (realTo)   { var t = new Date(realTo   + 'T23:59:59'); if (d > t) show = false; }
+    } else {
+      show = false; // no realdate → hide when filter active
+    }
+    item.style.display = show ? '' : 'none';
+  });
 }
 
 function closeDrawer() { document.getElementById('drawer').classList.remove('open'); }
