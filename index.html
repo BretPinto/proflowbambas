@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.5 — GAS v8 04/06/2026 12:31-->
+<!-- ProFlow v10.5.6 — GAS v8 04/06/2026 17:10-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -225,6 +225,10 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 /* Drag tooltip */
 .drag-tip{position:fixed;background:var(--text);color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;font-family:'DM Mono',monospace;pointer-events:none;z-index:100;opacity:0;transition:opacity .1s;white-space:nowrap}
 .drag-tip.show{opacity:1}
+
+/* Task title hover tooltip (Matriz / Kanban) */
+.task-tip{position:fixed;background:var(--text);color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;line-height:1.45;pointer-events:none;z-index:300;opacity:0;transition:opacity .12s;max-width:280px;box-shadow:0 4px 16px rgba(0,0,0,.22);white-space:normal;overflow-wrap:break-word}
+.task-tip.show{opacity:1}
 
 /* ─── DRAWER ───────────────────────────────────────────────────────────────── */
 .drawer{position:absolute;right:0;top:0;bottom:0;width:400px;background:var(--white);border-left:1px solid var(--border);z-index:20;display:none;flex-direction:column;overflow:hidden;box-shadow:-6px 0 20px rgba(0,0,0,.07)}
@@ -691,7 +695,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
         <input type="date" class="dr-date" id="dr-end" onchange="onDateChange()">
       </div>
       <div class="dr-row"><i class="ti ti-calendar-check"></i><span>Cumplimiento real</span>
-        <input type="date" class="dr-date" id="dr-realdate" disabled style="opacity:.7;cursor:not-allowed">
+        <input type="date" class="dr-date" id="dr-realdate" onchange="onRealdateChange()">
       </div>
       <div class="dr-row"><i class="ti ti-git-branch"></i><span>Depende de</span>
         <select class="dr-sel" id="dr-dep" onchange="updateCardDep()">
@@ -773,6 +777,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 </div>
 
 <div class="drag-tip" id="drag-tip"></div>
+<div class="task-tip" id="task-tip"></div>
 <div class="toast" id="toast"></div>
 
 <!-- Loading overlay — shown while GAS loads -->
@@ -1720,6 +1725,51 @@ function makeKcard(task) {
   return kcard;
 }
 
+// ── HOVER TOOLTIP for task titles (Matriz / Kanban) ───────────
+// Muestra el texto completo de la tarea al pasar el mouse, sin recortes.
+(function(){
+  const tip = document.getElementById('task-tip');
+  if (!tip) return;
+  let current = null;
+
+  function positionTip(el){
+    const r = el.getBoundingClientRect();
+    tip.style.left = '0px'; tip.style.top = '0px';
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let left = r.left + r.width / 2 - tw / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+    let top = r.top - th - 8;                 // por defecto arriba
+    if (top < 8) top = r.bottom + 8;          // si no cabe, abajo
+    tip.style.left = left + 'px';
+    tip.style.top  = top + 'px';
+  }
+
+  document.addEventListener('mouseover', function(e){
+    const el = e.target.closest('.card-title, .kcard-title');
+    if (!el || el === current) return;
+    const text = (el.textContent || '').trim();
+    if (!text) return;
+    current = el;
+    tip.textContent = text;
+    positionTip(el);
+    tip.classList.add('show');
+  });
+
+  document.addEventListener('mouseout', function(e){
+    if (!current) return;
+    const el = e.target.closest('.card-title, .kcard-title');
+    if (el === current && !current.contains(e.relatedTarget)) {
+      current = null;
+      tip.classList.remove('show');
+    }
+  });
+
+  // Ocultar al hacer scroll (la posición fija quedaría desfasada)
+  window.addEventListener('scroll', function(){
+    if (current) { current = null; tip.classList.remove('show'); }
+  }, true);
+})();
+
 const STATUS = {todo:'To Do',doing:'Doing',done:'Done'};
 
 // ── Timeline: 12 months Jan–Dec 2026, proportional widths based on real days ──
@@ -2233,7 +2283,7 @@ function makeStItem(st) {
       '<span class="st-date-lbl"><i class="ti ti-calendar-due" style="font-size:10px"></i> Vence:</span>' +
       '<input type="date" class="st-date-input" ' + (maxDate ? 'max="' + maxDate + '"' : '') + ' value="' + dueDateISO + '" onchange="saveStDuedate(this)">' +
       '<span class="st-date-lbl" style="margin-left:10px"><i class="ti ti-calendar-check" style="font-size:10px"></i> Real:</span>' +
-      '<span class="st-real-label' + (st.realdate ? '' : ' empty') + '">' + (st.realdate || '—') + '</span>' +
+      '<input type="date" class="st-date-input" value="' + realDateISO + '" onchange="saveStRealdate(this)">' +
     '</div>';
   return item;
 }
@@ -2303,15 +2353,15 @@ function _persistStOrder() {
       const p = iso.split('-'); if (p.length < 3) return '';
       return parseInt(p[2],10) + ' ' + mns[parseInt(p[1],10)-1];
     }
-    const rdLbl = item.querySelector('.st-real-label');
-    const rdVal = rdLbl && !rdLbl.classList.contains('empty') ? rdLbl.textContent.trim() : '';
+    const rdInputs = item.querySelectorAll('.st-date-input');
+    const rdInput = rdInputs[1] ? rdInputs[1] : null;
     const txtEl = item.querySelector('.st-txt');
     return {
       text:     txtEl ? txtEl.textContent : '',
       done:     item.querySelector('.st-chk').classList.contains('done'),
       resp:     item.querySelector('.st-resp') ? item.querySelector('.st-resp').value : '',
       duedate:  dd ? isoToShort(dd.value) : '',
-      realdate: rdVal === '—' ? '' : rdVal
+      realdate: rdInput ? isoToShort(rdInput.value) : ''
     };
   });
   gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) },
@@ -2504,6 +2554,10 @@ function onDateChange() {
     const d = new Date(endVal + 'T00:00:00');
     const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     task.date = d.getDate() + ' ' + mns[d.getMonth()];
+    // Update max on all subtask duedate inputs to reflect new activity end date
+    document.querySelectorAll('#st-list .st-date-input:not([disabled])').forEach(function(inp) {
+      inp.max = endVal;
+    });
     gasCall({ action: 'updateTask', id: task.id, field: 'date', value: task.date },
       function(r) { if (r && r.ok === false) toast('⚠ Error al guardar fecha'); },
       function()  { toast('⚠ Sin conexión al guardar fecha'); }
@@ -2523,6 +2577,40 @@ function onDateChange() {
     renderTimeline();
     toast('✓ Fecha actualizada');
   }
+}
+
+function onRealdateChange() {
+  if (!activeCard) return;
+  const val = document.getElementById('dr-realdate').value;
+  const task = getTask(activeCard.dataset.taskId);
+  if (!task) return;
+  const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  function isoToShort(iso) {
+    if (!iso) return '';
+    const p = iso.split('-'); if (p.length < 3) return '';
+    return parseInt(p[2],10) + ' ' + mns[parseInt(p[1],10)-1];
+  }
+  task.realdate = isoToShort(val);
+  gasCall({ action: 'updateTask', id: task.id, field: 'realdate', value: task.realdate }, null, null);
+  toast('✓ Cumplimiento real guardado');
+}
+
+function saveStRealdate(input) {
+  if (!activeCard || !activeCard.dataset.taskId) return;
+  const task = getTask(activeCard.dataset.taskId);
+  if (!task) return;
+  const items = Array.from(document.querySelectorAll('#st-list .st-item'));
+  const idx = items.indexOf(input.closest('.st-item'));
+  if (idx === -1 || !task.subtasks[idx]) return;
+  const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  function isoToShort(iso) {
+    if (!iso) return '';
+    const p = iso.split('-'); if (p.length < 3) return '';
+    return parseInt(p[2],10) + ' ' + mns[parseInt(p[1],10)-1];
+  }
+  task.subtasks[idx].realdate = isoToShort(input.value);
+  gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) }, null, null);
+  toast('✓ Fecha real de tarea guardada');
 }
 
 function editTitle() {
@@ -2661,16 +2749,15 @@ function toggleSt(btn) {
       task.subtasks = Array.from(document.querySelectorAll('#st-list .st-item')).map(function(item) {
         const isDone   = item.querySelector('.st-chk').classList.contains('done');
         const ddInputs = item.querySelectorAll('.st-date-input');
-        const prevReal = ddInputs[1] ? ddInputs[1].value : '';
+        const allInputs = item.querySelectorAll('.st-date-input');
+        const prevReal = allInputs[1] ? allInputs[1].value : '';
         // Auto set/clear realdate for this individual task
         let newReal = '';
         if (isDone) { newReal = prevReal ? _isoToShort(prevReal) : todayShort; }
-        // Update the real label display
-        const realLbl = item.querySelector('.st-real-label');
-        if (realLbl) {
-          realLbl.textContent = newReal || '—';
-          realLbl.className = 'st-real-label' + (newReal ? '' : ' empty');
-        }
+        // Update realdate input display
+        const rdInputs2 = item.querySelectorAll('.st-date-input');
+        const rdInp2 = rdInputs2[1] ? rdInputs2[1] : null;
+        if (rdInp2) rdInp2.value = newReal ? openDrawer.__dateStrToISO(newReal) : '';
         return {
           text:     item.querySelector('.st-txt').textContent || item.querySelector('input.st-txt') && item.querySelector('input.st-txt').value || '',
           done:     isDone,
