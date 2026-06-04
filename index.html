@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.8 — GAS v8 04/06/2026 18:43-->
+<!-- ProFlow v10.5.9 — GAS v8 04/06/2026 18:51-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -277,6 +277,11 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .st-pencil{font-size:12px;color:var(--border2);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;flex-shrink:0;padding:0 2px}
 .st-item:hover .st-pencil{opacity:1}
 .st-pencil:hover{color:var(--blue)}
+.st-edit-popup{position:absolute;left:10px;right:10px;background:var(--white);border:1.5px solid var(--blue);border-radius:10px;padding:10px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:50;display:none}
+.st-edit-popup.open{display:block}
+.st-edit-popup textarea{width:100%;min-height:72px;padding:7px 9px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);border:1px solid var(--border2);border-radius:7px;resize:vertical;outline:none;line-height:1.55;background:var(--bg);box-sizing:border-box}
+.st-edit-popup textarea:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-light)}
+.st-edit-popup-hint{font-size:10px;color:var(--text3);margin-top:5px;font-family:'DM Mono',monospace}
 .st-item:hover .st-drag-handle{opacity:1}
 .st-item.dragging{opacity:.4;background:var(--bg2);border-radius:6px}
 .st-item.drag-over-top{border-top:2px solid var(--blue)}
@@ -713,6 +718,10 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
       <div class="dr-label">SUBTAREAS</div>
       <div class="st-prog-wrap"><div class="st-prog-bar" id="st-prog" style="width:33%"></div></div>
       <div id="st-list">
+      </div>
+      <div id="st-edit-popup" class="st-edit-popup">
+        <textarea id="st-edit-ta" placeholder="Nombre de la tarea..."></textarea>
+        <div class="st-edit-popup-hint">Enter = guardar · Esc = cancelar</div>
       </div>
       <div class="add-row" onclick="openStInline()" style="margin-top:4px"><i class="ti ti-plus"></i>Agregar subtarea</div>
       <div class="inline-wrap" id="st-inline-wrap">
@@ -2284,23 +2293,34 @@ function saveStDuedate(input) {
 }
 
 function editStName(btn) {
-  const item  = btn.closest('.st-item');
-  const txtEl = item.querySelector('.st-txt');
-  const prev  = txtEl.textContent;
-  // Replace span with input
-  const inp = document.createElement('input');
-  inp.type  = 'text';
-  inp.value = prev;
-  inp.style.cssText = 'flex:1;font-size:12px;padding:1px 5px;border:1.5px solid var(--blue);border-radius:5px;outline:none;background:var(--white);color:var(--text);min-width:0';
-  txtEl.replaceWith(inp);
-  inp.className = 'st-txt';
-  inp.focus(); inp.select();
+  const item   = btn.closest('.st-item');
+  const txtEl  = item.querySelector('.st-txt');
+  const prev   = txtEl.textContent;
+  const popup  = document.getElementById('st-edit-popup');
+  const ta     = document.getElementById('st-edit-ta');
+  if (!popup || !ta) return;
+
+  // Position popup below the item
+  const itemRect   = item.getBoundingClientRect();
+  const drawerRect = document.getElementById('drawer').getBoundingClientRect();
+  popup.style.top  = (itemRect.bottom - drawerRect.top + 4) + 'px';
+
+  ta.value = prev;
+  popup.classList.add('open');
+  setTimeout(function() { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 30);
+
+  function closePopup() {
+    popup.classList.remove('open');
+    ta.onblur    = null;
+    ta.onkeydown = null;
+  }
+
   function save() {
-    const nv = inp.value.trim() || prev;
-    const span = document.createElement('span');
-    span.className = 'st-txt' + (item.querySelector('.st-chk').classList.contains('done') ? ' done' : '');
-    span.textContent = nv;
-    inp.replaceWith(span);
+    const nv = ta.value.trim() || prev;
+    closePopup();
+    // Update span text + title
+    txtEl.textContent = nv;
+    txtEl.title = nv;
     if (!activeCard || !activeCard.dataset.taskId) return;
     const task = getTask(activeCard.dataset.taskId);
     if (!task) return;
@@ -2312,11 +2332,13 @@ function editStName(btn) {
       if (nv !== prev) toast('✓ Nombre de tarea actualizado');
     }
   }
-  inp.onblur = save;
-  inp.onkeydown = function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
-    if (e.key === 'Escape') { inp.value = prev; inp.blur(); }
+
+  ta.onkeydown = function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); save(); }
+    if (e.key === 'Escape') { closePopup(); }
   };
+  // Delay blur to avoid firing before keydown
+  ta.onblur = function() { setTimeout(save, 150); };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -2345,7 +2367,7 @@ function makeStItem(st) {
     '<div class="st-row1">' +
       '<span class="st-drag-handle" title="Arrastrar"><i class="ti ti-grip-vertical"></i></span>' +
       '<button class="st-chk' + (st.done ? ' done' : '') + '" onclick="toggleSt(this)"></button>' +
-      '<span class="st-txt' + (st.done ? ' done' : '') + '">' + st.text + '</span>' +
+      '<span class="st-txt' + (st.done ? ' done' : '') + '" title="' + st.text.replace(/"/g,"&quot;") + '">' + st.text + '</span>' +
       '<button class="st-pencil" title="Editar nombre" onclick="editStName(this)"><i class="ti ti-pencil"></i></button>' +
       '<select class="st-resp" onchange="saveStResp(this)">' + respOpts + '</select>' +
       '<button class="st-del" onclick="delSt(this)"><i class="ti ti-x"></i></button>' +
