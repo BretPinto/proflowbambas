@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.7 — GAS v8 04/06/2026 18:36-->
+<!-- ProFlow v10.5.8 — GAS v8 04/06/2026 18:43-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2626,10 +2626,31 @@ function onDateChange() {
     const d = new Date(endVal + 'T00:00:00');
     const mns = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     task.date = d.getDate() + ' ' + mns[d.getMonth()];
-    // Update max on all subtask duedate inputs to reflect new activity end date
-    document.querySelectorAll('#st-list .st-date-input:not([disabled])').forEach(function(inp) {
-      inp.max = endVal;
+    // Update max on all subtask duedate inputs; also clear values that exceed new activity end date
+    document.querySelectorAll('#st-list .st-item').forEach(function(item) {
+      var inputs = item.querySelectorAll('.st-date-input');
+      var dueInp = inputs[0]; // first input = vence (duedate)
+      if (!dueInp) return;
+      dueInp.max = endVal;
+      if (dueInp.value && dueInp.value > endVal) {
+        dueInp.value = endVal; // clamp to new max
+        // Also update in model via saveStDuedate logic
+        var idx = Array.from(document.querySelectorAll('#st-list .st-item')).indexOf(item);
+        if (task.subtasks[idx]) {
+          var mns2 = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+          var dp = new Date(endVal + 'T00:00:00');
+          task.subtasks[idx].duedate = dp.getDate() + ' ' + mns2[dp.getMonth()];
+        }
+      }
     });
+    // Persist updated subtasks if any were clamped
+    if (task.subtasks.some(function(s,i) {
+      var item = document.querySelectorAll('#st-list .st-item')[i];
+      var inp = item && item.querySelectorAll('.st-date-input')[0];
+      return inp && inp.value === endVal;
+    })) {
+      gasCall({ action: 'updateTask', id: task.id, field: 'subtasks', value: JSON.stringify(task.subtasks) }, null, null);
+    }
     gasCall({ action: 'updateTask', id: task.id, field: 'date', value: task.date },
       function(r) { if (r && r.ok === false) toast('⚠ Error al guardar fecha'); },
       function()  { toast('⚠ Sin conexión al guardar fecha'); }
