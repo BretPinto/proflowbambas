@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.6.3 — GAS v8 05/06/2026 10:16-->
+<!-- ProFlow v10.6.4 — GAS v8 05/06/2026 10:23-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -189,6 +189,8 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .tl-lbl{width:230px;flex-shrink:0;padding:7px 10px 7px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--text);position:sticky;left:0;z-index:3;background:var(--white)}
 .tl-lbl.proj{font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px;letter-spacing:-.2px;background:var(--white)}
 .tl-lbl.task{color:var(--text2);padding-left:20px;font-size:11px;background:var(--bg)}
+.tl-lbl-clickable{cursor:pointer;transition:color .15s}
+.tl-lbl-clickable:hover{color:var(--blue)}
 .tl-lbl.dep{color:var(--text3);padding-left:30px;font-size:10px;font-style:italic;background:var(--bg)}
 .tl-pct{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-left:auto;padding-right:4px;flex-shrink:0}
 .tl-chev{font-size:14px;color:var(--text3);flex-shrink:0;transition:transform .2s}
@@ -3691,8 +3693,9 @@ function renderTimeline() {
       const row = document.createElement('div');
       row.className = 'tl-task-row';
       row.dataset.proj = pid;
+      row.dataset.taskId = task.id;
       row.innerHTML =
-        '<div class="tl-lbl task">' + (task.status === 'done' ? '✓ ' : '') + task.title + '</div>' +
+        '<div class="tl-lbl task tl-lbl-clickable">' + (task.status === 'done' ? '✓ ' : '') + task.title + '</div>' +
         '<div class="tl-bar-area">' +
           '<div class="act-bar-tl ' + barCls + '" id="' + actId + '" data-proj="' + pid + '" data-task-id="' + task.id + '" style="' + actBarStyle + '">' +
             '<div class="drag-edge left" data-role="left" data-act="' + actId + '"></div>' +
@@ -3755,6 +3758,30 @@ function renderTimeline() {
   });
 
   reapplyFiltersIfActive();
+
+  // Click on activity label in Timeline → open drawer
+  body.querySelectorAll('.tl-task-row[data-task-id]').forEach(function(row) {
+    var lbl = row.querySelector('.tl-lbl-clickable');
+    if (!lbl) return;
+    lbl.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var tid = row.dataset.taskId;
+      var task = getTask(tid);
+      if (!task) return;
+      // Reuse an existing card DOM node if visible, else create a proxy
+      var card = document.querySelector('.card[data-task-id="' + tid + '"],.kcard[data-task-id="' + tid + '"]');
+      if (!card) {
+        card = document.createElement('div');
+        card.dataset.taskId  = tid;
+        card.dataset.proj    = task.proj;
+        card.dataset.status  = task.status;
+        card.dataset.resp    = task.resp;
+        card.dataset.priority = task.priority || 'medium';
+        card.dataset.dep     = task.dep || '';
+      }
+      openDrawer(card);
+    });
+  });
 
   // Position today line after body is fully populated
   (function positionTodayLine() {
