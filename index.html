@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.5.9 — GAS v8 04/06/2026 18:51-->
+<!-- ProFlow v10.6.0 — GAS v8 05/06/2026 09:29-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3938,25 +3938,7 @@ function manualRefresh() {
   });
 }
 
-function _startAutoPoll() {
-  _pollTimer = setInterval(function() {
-    if (document.getElementById('drawer').classList.contains('open')) return;
-    gasCall({ action: 'getVersion' }, function(data) {
-      if (!data || !data.ok) return;
-      var v = data.version || '';
-      if (_lastVersion && v && v !== _lastVersion) {
-        closeDrawer();
-        gasCall({ action: 'getData' }, function(data2) {
-          if (data2 && data2.ok !== false) {
-            _applyGASData(data2);
-            toast('↻ Datos sincronizados');
-          }
-        }, null);
-      }
-      _lastVersion = v;
-    }, null);
-  }, 30000);
-}
+// Auto-poll removed — use manual refresh button
 
 document.addEventListener('DOMContentLoaded', () => {
   // Check existing session
@@ -4051,9 +4033,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const ps = document.getElementById('proj-start');
   if (ps && !ps.value) { const d = new Date(); ps.value = d.toISOString().split('T')[0]; }
 
-  // Start auto-poll + seed version baseline
-  _startAutoPoll();
-  gasCall({ action: 'getVersion' }, function(d) { if (d && d.version) _lastVersion = d.version; }, null);
+  // Manual refresh only — auto-poll disabled
 });
 </script>
 </body>
