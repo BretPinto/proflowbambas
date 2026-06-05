@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ProFlow v10.6.1 — GAS v8 05/06/2026 09:37-->
+<!-- ProFlow v10.6.2 — GAS v8 05/06/2026 09:46-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3332,13 +3332,11 @@ function setTLView(view, btn) {
 
 function toggleAllTL() {
   tlAllExpanded = !tlAllExpanded;
-  ['p1','p2','p3','p4'].forEach((p, i) => {
-    const group = document.getElementById('tl-' + p);
-    const chev = document.getElementById('chev-p' + (i+1 > 4 ? i+1 : p.replace('p','')));
-    const chevById = document.getElementById('chev-p' + p.slice(1));
-    const c = chevById;
-    if (group) Array.from(group.children).forEach(row => row.style.display = tlAllExpanded ? '' : 'none');
-    if (c) c.classList.toggle('open', tlAllExpanded);
+  Object.keys(PROJ).forEach(function(pid) {
+    const group = document.getElementById('tl-' + pid);
+    const chev  = document.getElementById('chev-' + pid);
+    if (group) Array.from(group.children).forEach(function(row) { row.style.display = tlAllExpanded ? '' : 'none'; });
+    if (chev)  chev.classList.toggle('open', tlAllExpanded);
   });
   const ico = document.getElementById('tl-col-ico');
   const txt = document.getElementById('tl-col-txt');
